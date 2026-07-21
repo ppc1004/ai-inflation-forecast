@@ -29,3 +29,9 @@ st.subheader("Historical CPI")
 st.line_chart(
     data.set_index("date")["cpi"]
 )
+
+st.subheader("Year-over-Year Inflation")
+
+st.line_chart(
+    data.set_index("date")["yoy"]
+)
