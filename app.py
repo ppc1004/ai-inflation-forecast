@@ -35,3 +35,9 @@ st.subheader("Year-over-Year Inflation")
 st.line_chart(
     data.set_index("date")["yoy"]
 )
+
+st.subheader("Month-over-Month Inflation")
+
+st.line_chart(
+    data.set_index("date")["mom"]
+)
