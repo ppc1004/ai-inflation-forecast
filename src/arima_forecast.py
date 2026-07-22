@@ -17,7 +17,7 @@ def run_arima_forecast():
     yoy = yoy.asfreq("MS")
 
     # ARIMA model
-    model = ARIMA(yoy, order=(0, 0, 1))
+    model = ARIMA(yoy, order=(1, 0, 2))
     fitted_model = model.fit()
 
     # Forecast next 12 months
