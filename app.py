@@ -106,10 +106,11 @@ with tab_overview:
     else:
         trend_phrase = "roughly unchanged from last month"
 
-    if latest['yoy'] > FED_TARGET:
-        target_phrase = f"above the Federal Reserve's {FED_TARGET:.0f}% target"
+    target_gap = latest['yoy'] - FED_TARGET
+    if target_gap > 0:
+        target_phrase = f"{target_gap:.2f} pp above the Federal Reserve's {FED_TARGET:.0f}% target"
     else:
-        target_phrase = f"at or below the Federal Reserve's {FED_TARGET:.0f}% target"
+        target_phrase = f"{abs(target_gap):.2f} pp below (or at) the Federal Reserve's {FED_TARGET:.0f}% target"
 
     st.info(
         f"**Key takeaway:** Annual inflation (YoY) is currently **{latest['yoy']:.2f}%**, "
@@ -120,6 +121,15 @@ with tab_overview:
     col1.metric("Latest CPI", f"{latest['cpi']:.3f}", f"{latest['cpi'] - previous['cpi']:.3f}", delta_color="off")
     col2.metric("Monthly Inflation (MoM)", f"{latest['mom']:.2f}%", f"{latest['mom'] - previous['mom']:.2f} pp", delta_color="inverse")
     col3.metric("Annual Inflation (YoY)", f"{latest['yoy']:.2f}%", f"{latest['yoy'] - previous['yoy']:.2f} pp", delta_color="inverse")
+
+    sparkline_df = data.dropna(subset=["yoy"])[["date", "yoy"]].tail(12)
+    sparkline = alt.Chart(sparkline_df).mark_line(color=PRIMARY_COLOR, strokeWidth=2).encode(
+        x=alt.X("date:T", axis=None),
+        y=alt.Y("yoy:Q", axis=None, scale=alt.Scale(zero=False)),
+        tooltip=["date:T", alt.Tooltip("yoy:Q", format=".2f")],
+    ).properties(height=70)
+    st.caption("Last 12 months YoY trend")
+    st.altair_chart(sparkline, use_container_width=True)
 
     st.subheader("YoY Inflation Forecast (with confidence interval)")
     st.caption("The shaded band shows the model's confidence interval — narrower means the model is more certain.")
@@ -183,6 +193,23 @@ with tab_overview:
             "financial, investment, or economic policy advice."
         )
 
+    with st.expander("❓ Frequently Asked Questions"):
+        st.markdown(
+            "**Why does the confidence interval get wider further out?** "
+            "ARIMA models estimate uncertainty based on how far into the future "
+            "a prediction reaches. Since each future month depends on the "
+            "previous one, small errors compound, so the model is less certain "
+            "the further ahead it forecasts."
+        )
+        st.markdown(
+            "**What's the difference between MAE and RMSE?** "
+            "MAE (Mean Absolute Error) is the average size of the forecast "
+            "error, treating all errors equally. RMSE (Root Mean Squared Error) "
+            "squares errors before averaging, so it penalizes larger mistakes "
+            "more heavily. If RMSE is much higher than MAE, it usually means "
+            "the model had a few larger misses."
+        )
+
 with tab_history:
     st.subheader("Historical CPI")
     st.line_chart(data.set_index("date")["cpi"].tail(history_months), color=PRIMARY_COLOR)
@@ -231,6 +258,11 @@ with tab_backtest:
     st.caption(
         "MAE / RMSE are forecast error metrics — lower means the model was more accurate historically. "
         "'Naive baseline' simply repeats last month's value, used as a reference point."
+    )
+    best_mae = rolling_backtest["mae"].min()
+    st.info(
+        f"**What this means:** Historically, the model's forecasts have been off by about "
+        f"**±{best_mae:.2f} percentage points** on average compared to actual inflation."
     )
     st.dataframe(rolling_backtest.sort_values("rmse"), use_container_width=True)
 
