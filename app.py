@@ -67,6 +67,7 @@ data, forecast = load_data()
 model_comparison, rolling_backtest = load_backtest()
 latest = data.iloc[-1]
 previous = data.iloc[-2]
+days_since_update = (pd.Timestamp.now() - latest['date']).days
 
 st.markdown(
     f"""
@@ -74,6 +75,7 @@ st.markdown(
         <h1>📈 AI Inflation Forecast</h1>
         <p>Tracking U.S. CPI data and forecasting inflation with ARIMA models.</p>
         <span class="updated-badge">Latest data: {latest['date'].strftime('%B %Y')}</span>
+        <span class="updated-badge">Data freshness: {days_since_update} days since latest release</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -165,10 +167,19 @@ with tab_overview:
         color=alt.Color("series:N", scale=color_scale),
     )
 
+    yoy_diff = actual_df["value"].diff().abs()
+    anomaly_threshold = yoy_diff.std() * 1.5
+    anomaly_df = actual_df[yoy_diff > anomaly_threshold]
+    anomaly_points = alt.Chart(anomaly_df).mark_point(size=90, filled=True, color="#dc2626", shape="diamond").encode(
+        x="date:T", y="value:Q",
+        tooltip=["date:T", alt.Tooltip("value:Q", format=".2f")],
+    )
+
     st.altair_chart(
-        (forecast_band + actual_line + forecast_line + target_line).interactive().properties(height=380),
+        (forecast_band + actual_line + forecast_line + target_line + anomaly_points).interactive().properties(height=380),
         use_container_width=True,
     )
+    st.caption("🔺 Red diamonds mark months with an unusually large swing in YoY inflation.")
 
     st.divider()
     with st.expander("ℹ️ About this project / Methodology & Disclaimer"):
@@ -213,6 +224,12 @@ with tab_overview:
 with tab_history:
     st.subheader("Historical CPI")
     st.line_chart(data.set_index("date")["cpi"].tail(history_months), color=PRIMARY_COLOR)
+
+    hist_yoy_series = data.dropna(subset=["yoy"])["yoy"].tail(history_months)
+    stat_col1, stat_col2, stat_col3 = st.columns(3)
+    stat_col1.metric("Avg YoY (window)", f"{hist_yoy_series.mean():.2f}%")
+    stat_col2.metric("Max YoY (window)", f"{hist_yoy_series.max():.2f}%")
+    stat_col3.metric("Min YoY (window)", f"{hist_yoy_series.min():.2f}%")
 
     col_a, col_b = st.columns(2)
     with col_a:
@@ -267,4 +284,11 @@ with tab_backtest:
     st.dataframe(rolling_backtest.sort_values("rmse"), use_container_width=True)
 
     with st.expander("View full ARIMA parameter comparison"):
-        st.dataframe(model_comparison.sort_values("rmse"), use_container_width=True)
+        model_comparison_sorted = model_comparison.sort_values("rmse")
+        rmse_chart = alt.Chart(model_comparison_sorted).mark_bar(color=PRIMARY_COLOR).encode(
+            x=alt.X("order:N", title="ARIMA order", sort=None),
+            y=alt.Y("rmse:Q", title="RMSE"),
+            tooltip=["order", alt.Tooltip("rmse:Q", format=".3f"), alt.Tooltip("mae:Q", format=".3f"), alt.Tooltip("aic:Q", format=".1f")],
+        ).properties(height=280)
+        st.altair_chart(rmse_chart, use_container_width=True)
+        st.dataframe(model_comparison_sorted, use_container_width=True)
