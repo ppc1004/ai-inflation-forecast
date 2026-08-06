@@ -125,6 +125,29 @@ with tab_overview:
         use_container_width=True,
     )
 
+    st.divider()
+    with st.expander("ℹ️ About this project / Methodology & Disclaimer"):
+        st.markdown(
+            "**Data source:** U.S. CPI (All Items) data is sourced from the "
+            "Federal Reserve Economic Data (FRED) database, published by the "
+            "Federal Reserve Bank of St. Louis, and updated automatically once a day."
+        )
+        st.markdown(
+            "**Method:** Forecasts are generated with an ARIMA (AutoRegressive "
+            "Integrated Moving Average) time series model. The best parameter "
+            "combination is chosen using rolling backtests (see the Model Backtest "
+            "tab). The shaded band on the forecast chart is the model's confidence "
+            "interval — it widens for months further in the future because "
+            "uncertainty naturally grows the further out a statistical model tries "
+            "to predict."
+        )
+        st.markdown(
+            "**Disclaimer:** This dashboard is a personal research and "
+            "demonstration project. Forecasts are statistical estimates only, "
+            "are not guaranteed to be accurate, and should not be treated as "
+            "financial, investment, or economic policy advice."
+        )
+
 with tab_history:
     st.subheader("Historical CPI")
     st.line_chart(data.set_index("date")["cpi"].tail(history_months), color=PRIMARY_COLOR)
