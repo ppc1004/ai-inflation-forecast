@@ -13,6 +13,7 @@ ROLLING_BACKTEST_PATH = Path("data/rolling_backtest.csv")
 
 PRIMARY_COLOR = "#2563eb"
 ACCENT_COLOR = "#f97316"
+FED_TARGET = 2.0
 
 st.markdown(
     f"""
@@ -97,10 +98,28 @@ tab_overview, tab_history, tab_forecast, tab_backtest = st.tabs(
 )
 
 with tab_overview:
+    yoy_change = latest['yoy'] - previous['yoy']
+    if yoy_change > 0.05:
+        trend_phrase = f"up {yoy_change:.2f} pp from last month"
+    elif yoy_change < -0.05:
+        trend_phrase = f"down {abs(yoy_change):.2f} pp from last month"
+    else:
+        trend_phrase = "roughly unchanged from last month"
+
+    if latest['yoy'] > FED_TARGET:
+        target_phrase = f"above the Federal Reserve's {FED_TARGET:.0f}% target"
+    else:
+        target_phrase = f"at or below the Federal Reserve's {FED_TARGET:.0f}% target"
+
+    st.info(
+        f"**Key takeaway:** Annual inflation (YoY) is currently **{latest['yoy']:.2f}%**, "
+        f"{trend_phrase}, and is {target_phrase}."
+    )
+
     col1, col2, col3 = st.columns(3)
-    col1.metric("Latest CPI", f"{latest['cpi']:.3f}", f"{latest['cpi'] - previous['cpi']:.3f}")
-    col2.metric("Monthly Inflation (MoM)", f"{latest['mom']:.2f}%", f"{latest['mom'] - previous['mom']:.2f} pp")
-    col3.metric("Annual Inflation (YoY)", f"{latest['yoy']:.2f}%", f"{latest['yoy'] - previous['yoy']:.2f} pp")
+    col1.metric("Latest CPI", f"{latest['cpi']:.3f}", f"{latest['cpi'] - previous['cpi']:.3f}", delta_color="off")
+    col2.metric("Monthly Inflation (MoM)", f"{latest['mom']:.2f}%", f"{latest['mom'] - previous['mom']:.2f} pp", delta_color="inverse")
+    col3.metric("Annual Inflation (YoY)", f"{latest['yoy']:.2f}%", f"{latest['yoy'] - previous['yoy']:.2f} pp", delta_color="inverse")
 
     st.subheader("YoY Inflation Forecast (with confidence interval)")
     st.caption("The shaded band shows the model's confidence interval — narrower means the model is more certain.")
@@ -119,9 +138,12 @@ with tab_overview:
     forecast_band = alt.Chart(forecast_display).mark_area(opacity=0.18, color=ACCENT_COLOR).encode(
         x="date:T", y="mean_ci_lower:Q", y2="mean_ci_upper:Q"
     )
+    target_line = alt.Chart(pd.DataFrame({"target": [FED_TARGET]})).mark_rule(
+        color="#64748b", strokeDash=[4, 4]
+    ).encode(y="target:Q")
 
     st.altair_chart(
-        (forecast_band + actual_line + forecast_line).interactive().properties(height=380),
+        (forecast_band + actual_line + forecast_line + target_line).interactive().properties(height=380),
         use_container_width=True,
     )
 
@@ -155,7 +177,14 @@ with tab_history:
     col_a, col_b = st.columns(2)
     with col_a:
         st.subheader("YoY Inflation")
-        st.line_chart(data.set_index("date")["yoy"].tail(history_months), color=PRIMARY_COLOR)
+        yoy_hist_chart = data.dropna(subset=["yoy"])[["date", "yoy"]].tail(history_months)
+        yoy_line = alt.Chart(yoy_hist_chart).mark_line(color=PRIMARY_COLOR).encode(
+            x="date:T", y=alt.Y("yoy:Q", title="YoY Inflation (%)"), tooltip=["date:T", alt.Tooltip("yoy:Q", format=".2f")]
+        )
+        target_line_hist = alt.Chart(pd.DataFrame({"target": [FED_TARGET]})).mark_rule(
+            color="#64748b", strokeDash=[4, 4]
+        ).encode(y="target:Q")
+        st.altair_chart((yoy_line + target_line_hist).properties(height=300), use_container_width=True)
     with col_b:
         st.subheader("MoM Inflation")
         st.line_chart(data.set_index("date")["mom"].tail(history_months), color=ACCENT_COLOR)
