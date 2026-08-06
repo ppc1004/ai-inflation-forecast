@@ -127,20 +127,33 @@ with tab_overview:
     historical_yoy = data.dropna(subset=["yoy"])[["date", "yoy"]].tail(history_months)
     forecast_display = forecast.head(forecast_months)
 
-    actual_line = alt.Chart(historical_yoy).mark_line(color=PRIMARY_COLOR, strokeWidth=2.5).encode(
-        x=alt.X("date:T", title="Date"),
-        y=alt.Y("yoy:Q", title="YoY Inflation (%)"),
-        tooltip=["date:T", alt.Tooltip("yoy:Q", format=".2f")],
+    color_scale = alt.Scale(
+        domain=["Actual", "Forecast", "Fed Target (2%)"],
+        range=[PRIMARY_COLOR, ACCENT_COLOR, "#64748b"],
     )
-    forecast_line = alt.Chart(forecast_display).mark_line(
-        color=ACCENT_COLOR, strokeWidth=2.5, strokeDash=[5, 3]
-    ).encode(x="date:T", y="mean:Q", tooltip=["date:T", alt.Tooltip("mean:Q", format=".2f")])
+
+    actual_df = historical_yoy.rename(columns={"yoy": "value"}).assign(series="Actual")
+    forecast_df = forecast_display.rename(columns={"mean": "value"}).assign(series="Forecast")
+    target_df = pd.DataFrame({"series": ["Fed Target (2%)"], "value": [FED_TARGET]})
+
+    actual_line = alt.Chart(actual_df).mark_line(strokeWidth=2.5).encode(
+        x=alt.X("date:T", title="Date"),
+        y=alt.Y("value:Q", title="YoY Inflation (%)"),
+        color=alt.Color("series:N", scale=color_scale, title="Series"),
+        tooltip=["date:T", alt.Tooltip("value:Q", format=".2f")],
+    )
+    forecast_line = alt.Chart(forecast_df).mark_line(strokeWidth=2.5, strokeDash=[5, 3]).encode(
+        x="date:T", y="value:Q",
+        color=alt.Color("series:N", scale=color_scale),
+        tooltip=["date:T", alt.Tooltip("value:Q", format=".2f")],
+    )
     forecast_band = alt.Chart(forecast_display).mark_area(opacity=0.18, color=ACCENT_COLOR).encode(
         x="date:T", y="mean_ci_lower:Q", y2="mean_ci_upper:Q"
     )
-    target_line = alt.Chart(pd.DataFrame({"target": [FED_TARGET]})).mark_rule(
-        color="#64748b", strokeDash=[4, 4]
-    ).encode(y="target:Q")
+    target_line = alt.Chart(target_df).mark_rule(strokeDash=[4, 4]).encode(
+        y="value:Q",
+        color=alt.Color("series:N", scale=color_scale),
+    )
 
     st.altair_chart(
         (forecast_band + actual_line + forecast_line + target_line).interactive().properties(height=380),
@@ -177,13 +190,24 @@ with tab_history:
     col_a, col_b = st.columns(2)
     with col_a:
         st.subheader("YoY Inflation")
-        yoy_hist_chart = data.dropna(subset=["yoy"])[["date", "yoy"]].tail(history_months)
-        yoy_line = alt.Chart(yoy_hist_chart).mark_line(color=PRIMARY_COLOR).encode(
-            x="date:T", y=alt.Y("yoy:Q", title="YoY Inflation (%)"), tooltip=["date:T", alt.Tooltip("yoy:Q", format=".2f")]
+        yoy_hist_df = (
+            data.dropna(subset=["yoy"])[["date", "yoy"]]
+            .tail(history_months)
+            .rename(columns={"yoy": "value"})
+            .assign(series="Actual")
         )
-        target_line_hist = alt.Chart(pd.DataFrame({"target": [FED_TARGET]})).mark_rule(
-            color="#64748b", strokeDash=[4, 4]
-        ).encode(y="target:Q")
+        target_hist_df = pd.DataFrame({"series": ["Fed Target (2%)"], "value": [FED_TARGET]})
+        hist_color_scale = alt.Scale(domain=["Actual", "Fed Target (2%)"], range=[PRIMARY_COLOR, "#64748b"])
+        yoy_line = alt.Chart(yoy_hist_df).mark_line().encode(
+            x="date:T",
+            y=alt.Y("value:Q", title="YoY Inflation (%)"),
+            color=alt.Color("series:N", scale=hist_color_scale, title="Series"),
+            tooltip=["date:T", alt.Tooltip("value:Q", format=".2f")],
+        )
+        target_line_hist = alt.Chart(target_hist_df).mark_rule(strokeDash=[4, 4]).encode(
+            y="value:Q",
+            color=alt.Color("series:N", scale=hist_color_scale),
+        )
         st.altair_chart((yoy_line + target_line_hist).properties(height=300), use_container_width=True)
     with col_b:
         st.subheader("MoM Inflation")
