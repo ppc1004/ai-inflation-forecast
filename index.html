@@ -114,6 +114,7 @@
   details.expander .exp-body{padding:.9rem 1.1rem; font-size:.88rem; line-height:1.65;}
   details.expander .exp-body p{margin:.4rem 0;}
 
+.disclaimer-bar{background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:.6rem .9rem; border-radius:8px; font-size:.8rem; line-height:1.5; margin-bottom:1.25rem;}
   .cols2{display:grid; grid-template-columns:1fr 1fr; gap:1.75rem;}
   @media (max-width: 760px){
     .cols2{grid-template-columns:1fr;}
@@ -408,12 +409,12 @@
       <aside class="sidebar">
         <h2>Display Settings</h2>
         <div class="field">
-          <label>History window (months): <span class="val" id="historyVal"></span></label>
-          <input type="range" id="historySlider">
+<label for="historySlider">History window (months): <span class="val" id="historyVal"></span></label>          
+<input type="range" id="historySlider" aria-label="History window in months">
         </div>
         <div class="field">
-          <label>Forecast window (months): <span class="val" id="forecastVal"></span></label>
-          <input type="range" id="forecastSlider">
+          <label for="forecastSlider">Forecast window (months): <span class="val" id="forecastVal"></span></label>
+          <input type="range" id="forecastSlider" aria-label="Forecast window in months">
         </div>
         <div class="caption">Adjust the sliders to change how much history and forecast is shown in the charts.</div>
         <button class="btn" id="downloadBtn">⬇ Download CPI data (CSV)</button>
@@ -422,9 +423,10 @@
         <div class="hero">
           <h1>📈 AI Inflation Forecast</h1>
           <p>Tracking U.S. CPI data and forecasting inflation with ARIMA models.</p>
-          <span class="badge">Latest data: ${fmtDateLong(latest.date)}</span>
-          <span class="badge">Data freshness: ${daysSinceUpdate} days since latest release</span>
+          <span class="badge" title="Sourced from FRED (Federal Reserve Economic Data), CPI-U, All Items.">Latest data: ${fmtDateLong(latest.date)}</span>
+          <span class="badge" title="CPI is published by the BLS with a built-in 2-6 week reporting lag, so this gap is normal, not a sign the data is stale.">Data freshness: ${daysSinceUpdate} days since latest release</span>
         </div>
+        <div class="disclaimer-bar">⚠️ Personal research &amp; demonstration project — forecasts are statistical estimates, not financial, investment, or economic policy advice. Not affiliated with the Federal Reserve, BLS, or FRED.</div>
 
         <div class="tabs">
           <button class="tab-btn active" data-tab="overview">🏠 Overview</button>
