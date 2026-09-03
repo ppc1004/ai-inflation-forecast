@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Inflation Forecast</title>
+  <meta name="description" content="A free dashboard tracking U.S. CPI data and forecasting near-term inflation with an ARIMA model, updated daily, with a visible backtest track record.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AI Inflation Forecast">
+  <meta property="og:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, updated daily.">
+  <meta property="og:url" content="https://ppc1004.github.io/ai-inflation-forecast/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="AI Inflation Forecast">
+  <meta name="twitter:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, updated daily.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%93%88</text></svg>">
 <style>
   :root{
     --primary:#2563eb;
@@ -57,9 +66,8 @@
     padding:.2rem .7rem; border-radius:999px; font-size:.8rem; margin-top:.6rem; margin-right:.4rem;
   }
 
-  .tabs{display:flex; gap:.25rem; border-bottom:1px solid var(--border); margin-bottom:1.25rem; flex-wrap:wrap;}
-  .tab-btn{
-    background:none; border:none; cursor:pointer; padding:.6rem 1rem; font-size:.95rem;
+.tabs{display:flex; gap:.25rem; border-bottom:1px solid var(--border); margin-bottom:1.25rem; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;}  .tab-btn{
+    background:none; border:none; cursor:pointer; padding:.6rem 1rem; font-size:.95rem; white-space:nowrap; flex-shrink:0;
     color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px;
   }
   .tab-btn.active{color:var(--primary); border-bottom-color:var(--primary); font-weight:600;}
