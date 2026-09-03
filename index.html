@@ -538,8 +538,7 @@
         <h3 class="section-title">YoY Inflation Forecast (with confidence interval)</h3>
         <div class="subcaption">The shaded band shows the model's confidence interval — narrower means the model is more certain.</div>
         <div class="chart-box" id="mainForecastChart"></div>
-        <div class="subcaption">🔺 Red diamonds mark months with an unusually large swing in YoY inflation.</div>
-
+        
         <hr class="divider">
         <details class="expander">
           <summary>ℹ️ About this project / Methodology &amp; Disclaimer</summary>
@@ -593,16 +592,6 @@
         return row ? row.ci_upper : null;
       });
 
-      // anomalies computed on the historical window only (matches original)
-      const histValues = histWindow.map(d=>d.yoy);
-      const diffs = histValues.map((v,i)=> i===0 ? null : Math.abs(v-histValues[i-1]));
-      const threshold = sampleStd(diffs) * 1.5;
-      const anomalyByTime = new Map();
-      histWindow.forEach((d,i)=>{
-        if(diffs[i]!=null && diffs[i] > threshold){ anomalyByTime.set(dateKey(d.date), d.yoy); }
-      });
-      const scatterValues = times.map(t => anomalyByTime.has(t) ? anomalyByTime.get(t) : null);
-
       lineChart(document.getElementById('mainForecastChart'), {
         height:380, yTitle:"YoY Inflation (%)",
         labels,
@@ -612,7 +601,6 @@
         ],
         band:{upperValues:ciUpper, lowerValues:ciLower, color:ACCENT, label:'Confidence interval'},
         hLines:[{value:FED_TARGET, color:MUTED_GRAY, label:'Fed Target (2%)'}],
-        scatter:{label:'Anomaly', color:RED, values:scatterValues},
         yFormat:v=>v.toFixed(1)+'%'
       });
     }
