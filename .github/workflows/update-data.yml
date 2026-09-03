@@ -26,10 +26,29 @@ jobs:
       - name: Download latest CPI data
         run: python src/download_cpi.py
 
+      - name: Check whether CPI data changed
+        id: cpi_diff
+        run: |
+          if git diff --quiet -- data/cpi_data.csv; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The forecast, model-comparison, and rolling-backtest CSVs are all
+      # derived from cpi_data.csv. They only need to be regenerated when a
+      # new CPI release actually lands, so this only runs on real changes.
+      - name: Regenerate forecast and backtest outputs
+        if: steps.cpi_diff.outputs.changed == 'true'
+        run: |
+          python src/arima_forecast.py
+          python src/model_comparison.py
+          python src/rolling_backtest.py
+
       - name: Commit and push if data changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/cpi_data.csv
-          git diff --staged --quiet || git commit -m "Auto-update CPI data"
+          git add data/cpi_data.csv data/yoy_forecast.csv data/model_comparison.csv data/rolling_backtest.csv
+          git diff --staged --quiet || git commit -m "Auto-update CPI data and refresh forecast/backtest outputs"
           git push
