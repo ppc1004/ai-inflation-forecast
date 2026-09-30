@@ -3,181 +3,251 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Inflation Forecast</title>
-  <meta name="description" content="A free dashboard tracking U.S. CPI data and forecasting near-term inflation with an ARIMA model, refreshed with each monthly CPI release, with a visible backtest track record.">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="AI Inflation Forecast">
-  <meta property="og:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, refreshed with each monthly CPI release.">
-  <meta property="og:url" content="https://ppc1004.github.io/ai-inflation-forecast/">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="AI Inflation Forecast">
-  <meta name="twitter:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, refreshed with each monthly CPI release.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%93%88</text></svg>">
+<title>U.S. Inflation Forecast</title>
+<meta name="description" content="U.S. CPI inflation tracker and 12-month ARIMA forecast, with a rolling backtest track record against a naive baseline. Refreshed with each monthly CPI release.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="U.S. Inflation Forecast">
+<meta property="og:description" content="U.S. CPI inflation tracker and 12-month ARIMA forecast with a transparent backtest track record.">
+<meta property="og:url" content="https://ppc1004.github.io/ai-inflation-forecast/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="U.S. Inflation Forecast">
+<meta name="twitter:description" content="U.S. CPI inflation tracker and 12-month ARIMA forecast with a transparent backtest track record.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%232a78d6%22/><path d=%22M6 22 L12 15 L17 18 L26 8%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --primary:#1e3a5f;
-    --primary-dark:#0f2340;
-    --accent:#8a6d1f;
-    --bg:#ffffff;
-    --panel:#ffffff;
-    --border:#d8dde3;
-    --text:#1a1a1a;
-    --muted:#5b6570;
-    --green:#2e5339;
-    --red:#7a2e2e;
-    --serif: Georgia, "Times New Roman", Times, serif;
-    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color-scheme: light;
+    --page:#f7f7f5;
+    --surface:#ffffff;
+    --ink:#0b0b0b;
+    --ink-2:#52514e;
+    --muted:#898781;
+    --grid:#ebeae4;
+    --axis:#c3c2b7;
+    --border:rgba(11,11,11,.09);
+    --c-actual:#2a78d6;
+    --c-model:#eb6834;
+    --c-ref:#9a9892;
+    --c-good:#006300;
+    --c-bad:#b42318;
+    --band-opacity:.13;
+    --sans:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --radius:14px;
   }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --page:#0f0f0e;
+      --surface:#1a1a19;
+      --ink:#ffffff;
+      --ink-2:#c3c2b7;
+      --muted:#8f8d86;
+      --grid:#2c2c2a;
+      --axis:#44443f;
+      --border:rgba(255,255,255,.09);
+      --c-actual:#3987e5;
+      --c-model:#d95926;
+      --c-ref:#77756f;
+      --c-good:#0ca30c;
+      --c-bad:#e66767;
+      --band-opacity:.16;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --page:#0f0f0e; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#8f8d86;
+    --grid:#2c2c2a; --axis:#44443f; --border:rgba(255,255,255,.09);
+    --c-actual:#3987e5; --c-model:#d95926; --c-ref:#77756f; --c-good:#0ca30c; --c-bad:#e66767; --band-opacity:.16;
+  }
+
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:var(--sans);
-    color:var(--text);
-    background:var(--bg);
-    font-size:15px;
-  }
-  .app{display:flex; min-height:100vh;}
-  .sidebar{
-    width:250px; flex:0 0 250px;
-    padding:1.75rem 1.5rem;
-    background:#fff;
-    border-right:1px solid var(--border);
-  }
-  .sidebar h2{
-    font-family:var(--serif); font-weight:normal; font-size:.85rem; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--muted); margin:0 0 1.3rem 0; padding-bottom:.5rem;
-    border-bottom:1px solid var(--border);
-  }
-  .field{margin-bottom:1.5rem;}
-  .field label{display:block; font-size:.8rem; margin-bottom:.4rem; color:var(--text);}
-  .field .val{color:var(--primary); font-weight:600; font-family:var(--serif);}
-  .field input[type=range]{width:100%; accent-color:var(--primary);}
-  .caption{font-size:.76rem; color:var(--muted); line-height:1.5; margin-top:.25rem;}
-  .btn{
-    display:inline-block; width:100%; text-align:left;
-    padding:.5rem 0; border:none; border-top:1px solid var(--border);
-    background:none; color:var(--primary); font-size:.82rem; cursor:pointer;
-    margin-top:1rem; text-decoration:underline; text-underline-offset:2px;
-  }
-  .btn:hover{color:var(--primary-dark);}
-  .content{flex:1; min-width:0; padding:2rem 2.5rem 3rem 2.5rem; max-width:1180px;}
+  html{scroll-behavior:smooth; scroll-padding-top:72px;}
+  body{margin:0; background:var(--page); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;}
+  a{color:inherit;}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+  .num{font-variant-numeric:tabular-nums;}
 
-  .masthead{border-bottom:3px solid var(--text); padding-bottom:1.1rem; margin-bottom:1.6rem;}
-  .masthead .kicker{
-    font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem;
-  }
-  .masthead h1{
-    font-family:var(--serif); font-weight:700; margin:0; font-size:2.15rem; color:var(--text); letter-spacing:-.01em;
-  }
-  .masthead p{font-family:var(--serif); font-style:italic; margin:.4rem 0 0 0; color:#3a3a3a; font-size:1.02rem;}
-  .meta-line{font-size:.78rem; color:var(--muted); margin-top:.75rem;}
-  .meta-line b{color:var(--text); font-weight:600;}
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--page) 88%, transparent); backdrop-filter:saturate(1.4) blur(10px); border-bottom:1px solid var(--border);}
+  .topbar .wrap{display:flex; align-items:center; gap:24px; height:56px;}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:600; font-size:15px; text-decoration:none; white-space:nowrap;}
+  .brand-mark{width:22px; height:22px; border-radius:6px; background:var(--c-actual); display:grid; place-items:center;}
+  .nav{display:flex; gap:4px; margin-left:auto; overflow-x:auto; scrollbar-width:none;}
+  .nav::-webkit-scrollbar{display:none;}
+  .nav a{font-size:13.5px; color:var(--ink-2); text-decoration:none; padding:6px 10px; border-radius:8px; white-space:nowrap;}
+  .nav a:hover{background:var(--border); color:var(--ink);}
+  .nav a.gh{border:1px solid var(--border); margin-left:6px; display:flex; align-items:center; gap:6px;}
 
-  .disclaimer-bar{
-    border-top:1px solid var(--border); border-bottom:1px solid var(--border);
-    color:var(--muted); padding:.6rem 0; font-size:.78rem; line-height:1.6; margin-bottom:1.5rem;
+  /* ---------- hero ---------- */
+  header.hero{padding-top:48px; padding-bottom:28px;}
+  .eyebrow{font-size:13px; font-weight:500; color:var(--ink-2); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .pill{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500; padding:3px 10px; border-radius:999px; background:var(--surface); border:1px solid var(--border); color:var(--ink-2);}
+  .pill .dot{width:7px; height:7px; border-radius:50%; background:var(--c-good);}
+  h1{font-size:clamp(28px, 4vw, 40px); line-height:1.12; letter-spacing:-.02em; font-weight:700; margin:14px 0 10px; max-width:900px;}
+  .lede{font-size:16.5px; color:var(--ink-2); max-width:700px; margin:0;}
+  .lede b{color:var(--ink); font-weight:600;}
+
+  /* ---------- KPI tiles ---------- */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:28px 0 0;}
+  .kpi{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 18px;}
+  .kpi-label{font-size:13px; color:var(--ink-2); font-weight:500;}
+  .kpi-value{font-size:30px; font-weight:600; letter-spacing:-.02em; margin-top:6px; line-height:1.1;}
+  .kpi-value small{font-size:15px; font-weight:500; color:var(--ink-2); letter-spacing:0;}
+  .kpi-sub{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .delta-up{color:var(--c-bad);} .delta-down{color:var(--c-good);}
+  .kpi.hero .kpi-value{font-size:44px;}
+
+  /* ---------- sections & cards ---------- */
+  section{padding:28px 0;}
+  .sec-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:14px;}
+  h2{font-size:22px; letter-spacing:-.015em; margin:0; font-weight:650;}
+  .sec-sub{color:var(--ink-2); font-size:14.5px; margin:4px 0 0; max-width:720px;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px;}
+  .card + .card{margin-top:12px;}
+  .card-title{font-size:15px; font-weight:600; margin:0;}
+  .card-sub{font-size:13px; color:var(--ink-2); margin:2px 0 12px;}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .grid-2 .card + .card, .method .card + .card{margin-top:0;}
+
+  /* ---------- controls ---------- */
+  .seg{display:inline-flex; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px;}
+  .seg button{font:inherit; font-size:13px; font-weight:500; border:0; background:none; color:var(--ink-2); padding:5px 12px; border-radius:7px; cursor:pointer;}
+  .seg button:hover{color:var(--ink);}
+  .seg button[aria-pressed="true"]{background:var(--ink); color:var(--surface);}
+
+  /* ---------- charts ---------- */
+  .legend{display:flex; flex-wrap:wrap; gap:16px; font-size:12.5px; color:var(--ink-2); margin:0 0 10px;}
+  .legend span{display:inline-flex; align-items:center; gap:7px;}
+  .key-line{width:16px; height:2px; border-radius:1px; display:inline-block;}
+  .key-dash{width:16px; height:0; border-top:2px dashed; display:inline-block;}
+  .key-area{width:14px; height:10px; border-radius:2px; display:inline-block;}
+  .chart{position:relative; width:100%;}
+  .chart svg{display:block; width:100%; overflow:visible;}
+  .chart text{font-family:var(--sans); font-size:12px; fill:var(--muted); font-variant-numeric:tabular-nums;}
+  .chart .grid line{stroke:var(--grid); stroke-width:1;}
+  .chart .baseline{stroke:var(--axis); stroke-width:1;}
+  .chart .ref{stroke:var(--c-ref); stroke-width:1; stroke-dasharray:3 3;}
+  .chart .ref-label{fill:var(--ink-2); font-size:11.5px;}
+  .chart .s{fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round;}
+  .chart .s-actual{stroke:var(--c-actual);}
+  .chart .s-model{stroke:var(--c-model);}
+  .chart .s-ref{stroke:var(--c-ref);}
+  .chart .dashed{stroke-dasharray:5 4;}
+  .chart .band-model{fill:var(--c-model); opacity:var(--band-opacity);}
+  .chart .dot-actual{fill:var(--c-actual);} .chart .dot-model{fill:var(--c-model);} .chart .dot-ref{fill:var(--c-ref);}
+  .chart .ring{stroke:var(--surface); stroke-width:2;}
+  .chart .bar-actual{fill:var(--c-actual);}
+  .chart .bar-actual.hover{opacity:.75;}
+  .chart .xhair{stroke:var(--axis); stroke-width:1;}
+  .chart .end-label{font-size:12px; font-weight:600; fill:var(--ink);}
+  .tip{position:absolute; pointer-events:none; background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 20px rgba(0,0,0,.12); border-radius:10px; padding:8px 11px; font-size:12.5px; min-width:140px; z-index:5; opacity:0; transition:opacity .08s;}
+  .tip .t-date{color:var(--ink-2); font-size:12px; margin-bottom:4px;}
+  .tip .t-row{display:flex; align-items:center; gap:8px; justify-content:space-between;}
+  .tip .t-row b{font-weight:600; font-variant-numeric:tabular-nums;}
+  .tip .t-key{display:inline-flex; align-items:center; gap:6px; color:var(--ink-2);}
+
+  /* ---------- leaderboard ---------- */
+  .lb{display:grid; gap:6px;}
+  .lb-row{display:grid; grid-template-columns:190px 1fr 64px 64px; align-items:center; gap:12px; font-size:13px;}
+  .lb-head{font-size:12px; color:var(--muted);}
+  .lb-name{white-space:nowrap; color:var(--ink-2);}
+  .lb-row.is-model .lb-name{color:var(--ink); font-weight:600;}
+  .lb-track{height:14px; position:relative;}
+  .lb-bar{height:14px; border-radius:0 4px 4px 0; background:var(--grid);}
+  .lb-row.is-model .lb-bar{background:var(--c-model);}
+  .lb-row.is-naive .lb-bar{background:var(--c-ref);}
+  .lb-v{text-align:right; font-variant-numeric:tabular-nums;}
+  .tag{font-size:10.5px; font-weight:600; letter-spacing:.02em; padding:1px 6px; border-radius:5px; margin-left:6px; vertical-align:1px; border:1px solid var(--border); color:var(--ink-2);}
+
+  /* ---------- callouts & stats ---------- */
+  .callouts{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px;}
+  .callout{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px;}
+  .callout .kpi-value{font-size:26px;}
+
+  /* ---------- tables ---------- */
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{text-align:left; font-weight:500; color:var(--muted); font-size:12.5px; padding:8px 10px; border-bottom:1px solid var(--border);}
+  td{padding:9px 10px; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums;}
+  tr:last-child td{border-bottom:0;}
+  th.r, td.r{text-align:right;}
+  .range-cell{color:var(--ink-2);}
+  details.more{margin-top:14px; border-top:1px solid var(--border); padding-top:10px;}
+  details.more summary{cursor:pointer; font-size:13.5px; font-weight:500; color:var(--ink-2); list-style:none; display:flex; align-items:center; gap:6px;}
+  details.more summary::-webkit-details-marker{display:none;}
+  details.more summary::before{content:"›"; display:inline-block; transition:transform .15s; font-size:16px; line-height:1;}
+  details.more[open] summary::before{transform:rotate(90deg);}
+  .scroll{max-height:360px; overflow:auto; margin-top:10px;}
+
+  /* ---------- methodology ---------- */
+  .method{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+  .method h3{font-size:14.5px; margin:0 0 6px; font-weight:600;}
+  .method p, .method li{font-size:14px; color:var(--ink-2); margin:0;}
+  .method ul{padding-left:18px; margin:0; display:grid; gap:4px;}
+  code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.88em; background:var(--border); padding:1px 5px; border-radius:5px;}
+  .pipeline{display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:12.5px; margin-top:10px;}
+  .pipeline span.step{background:var(--page); border:1px solid var(--border); border-radius:8px; padding:4px 9px; color:var(--ink);}
+  .pipeline span.arrow{color:var(--muted);}
+
+  footer{padding:32px 0 48px; color:var(--muted); font-size:12.5px; border-top:1px solid var(--border); margin-top:24px;}
+  footer .wrap{display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+
+  .loading, .error{padding:80px 24px; text-align:center; color:var(--ink-2);}
+  .error{color:var(--c-bad);}
+
+  @media (max-width: 900px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .grid-2, .method{grid-template-columns:1fr;}
+    .callouts{grid-template-columns:1fr;}
   }
-
-  .stat-row{
-    display:grid; grid-template-columns:1.1fr 1fr; gap:2.5rem;
-    padding:1.6rem 0; border-bottom:1px solid var(--border); margin-bottom:1.75rem;
+  @media (max-width: 560px){
+    .wrap{padding:0 16px;}
+    .topbar .nav a:not(.gh){display:none;}
+    header.hero{padding-top:32px; padding-bottom:18px;}
+    .kpi-value{font-size:24px;} .kpi.hero .kpi-value{font-size:34px;}
+    .card{padding:16px;}
+    .lb-row{grid-template-columns:132px 1fr 48px; }
+    .lb-row .tag{display:none;}
+    .lb-row .lb-rmse{display:none;}
   }
-  .stat-main .stat-number{font-family:var(--serif); font-weight:700; font-size:3.6rem; line-height:1; color:var(--text);}
-  .stat-main .stat-sub{font-size:.9rem; color:var(--text); margin-top:.5rem;}
-  .stat-main .stat-updated{font-size:.76rem; color:var(--muted); margin-top:.6rem;}
-  .stat-side{display:flex; flex-direction:column; justify-content:center; gap:.85rem; border-left:1px solid var(--border); padding-left:1.75rem;}
-  .side-item{display:flex; align-items:baseline; justify-content:space-between; gap:1rem;}
-  .side-label{font-size:.82rem; color:var(--muted);}
-  .side-value{font-family:var(--serif); font-size:1.15rem; font-weight:700; color:var(--text); white-space:nowrap;}
-  .side-value.up{color:var(--red);}
-  .side-value.down{color:var(--green);}
-
-  .tabs{display:flex; gap:1.6rem; border-bottom:1px solid var(--border); margin-bottom:1.5rem; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;}
-  .tab-btn{
-    background:none; border:none; cursor:pointer; padding:.55rem 0; font-size:.86rem; white-space:nowrap; flex-shrink:0;
-    letter-spacing:.03em; text-transform:uppercase; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px;
-    font-family:var(--sans);
-  }
-  .tab-btn.active{color:var(--text); border-bottom-color:var(--text); font-weight:600;}
-  .tab-panel{display:none;}
-  .tab-panel.active{display:block;}
-
-  .info-box{
-    background:none; border:none; border-left:3px solid var(--text); color:var(--text);
-    padding:.15rem 0 .15rem 1rem; font-size:.95rem; line-height:1.6; margin-bottom:1.3rem; font-family:var(--serif);
-  }
-  .metrics{display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin-bottom:1.5rem; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
-  .metric{
-    background:none; border:none; border-right:1px solid var(--border); padding:.9rem 1.2rem 0.9rem 0;
-  }
-  .metric:first-child{padding-left:0;}
-  .metric:last-child{border-right:none;}
-  .metric .m-label{font-size:.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.03em;}
-  .metric .m-value{font-family:var(--serif); font-size:1.7rem; font-weight:700; margin-top:.3rem;}
-  .metric .m-delta{font-size:.8rem; margin-top:.3rem;}
-  .m-delta.up{color:var(--red);}
-  .m-delta.down{color:var(--green);}
-  .m-delta.off{color:var(--muted);}
-
-  h3.section-title{font-family:var(--serif); font-weight:700; font-size:1.25rem; margin:1.75rem 0 .15rem 0; color:var(--text);}
-  .subcaption{font-size:.82rem; color:var(--muted); margin:0 0 .8rem 0;}
-
-  .chart-box{margin-bottom:.5rem;}
-  .legend{display:flex; flex-wrap:wrap; gap:.9rem; font-size:.76rem; color:var(--muted); margin-bottom:.5rem;}
-  .legend .li{display:flex; align-items:center; gap:.35rem;}
-  .legend .swatch{width:14px; height:2px; display:inline-block;}
-  .legend .swatch.area{width:12px; height:10px;}
-  .legend .swatch.dot{width:8px; height:8px; transform:rotate(45deg);}
-
-  hr.divider{border:none; border-top:1px solid var(--border); margin:2rem 0;}
-
-  details.expander{
-    border:none; border-top:1px solid var(--border); margin-bottom:0; overflow:hidden; background:#fff;
-  }
-  details.expander summary{
-    cursor:pointer; padding:.8rem 0; font-weight:600; font-size:.92rem;
-    background:none; list-style:none; font-family:var(--serif);
-  }
-  details.expander summary::-webkit-details-marker{display:none;}
-  details.expander summary:before{content:"+ "; color:var(--muted); font-family:var(--sans);}
-  details.expander[open] summary:before{content:"– "; }
-  details.expander .exp-body{padding:0 0 1.1rem 0; font-size:.9rem; line-height:1.7;}
-  details.expander .exp-body p{margin:.5rem 0;}
-
-  .cols2{display:grid; grid-template-columns:1fr 1fr; gap:2.25rem;}
-  @media (max-width: 760px){
-    .cols2{grid-template-columns:1fr;}
-    .metrics{grid-template-columns:1fr;}
-    .stat-row{grid-template-columns:1fr;}
-    .stat-side{border-left:none; padding-left:0; border-top:1px solid var(--border); padding-top:1rem;}
-    .app{flex-direction:column;}
-    .sidebar{width:100%; flex:none; border-right:none; border-bottom:1px solid var(--border);}
-  }
-
-  .table-wrap{overflow:auto; border:1px solid var(--border);}
-  table{width:100%; border-collapse:collapse; font-size:.83rem;}
-  thead th{
-    position:sticky; top:0; background:#fafafa; text-align:left; padding:.55rem .7rem;
-    border-bottom:1px solid var(--border); white-space:nowrap; font-weight:600;
-  }
-  tbody td{padding:.42rem .7rem; border-bottom:1px solid #eee; white-space:nowrap;}
-  tbody tr:hover{background:#fafafa;}
-
-  .load-msg{padding:2rem; color:var(--muted); font-size:.95rem;}
-  .err-msg{padding:1rem; background:#fdf2f2; border:1px solid #e5c6c6; color:var(--red); font-size:.9rem; line-height:1.6;}
-  .footer-note{font-size:.76rem; color:var(--muted); margin-top:2.5rem; border-top:1px solid var(--border); padding-top:1rem;}
 </style>
 </head>
 <body>
 
-<div id="app-root" class="app">
-  <div class="load-msg" style="padding:3rem;">Loading data…</div>
+<div class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <span class="brand-mark"><svg width="14" height="14" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 23 L12 15 L17 18 L27 7" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      U.S. Inflation Forecast
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#forecast">Forecast</a>
+      <a href="#track-record">Track record</a>
+      <a href="#history">History</a>
+      <a href="#methodology">Methodology</a>
+      <a class="gh" href="https://github.com/ppc1004/ai-inflation-forecast" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        Code
+      </a>
+    </nav>
+  </div>
 </div>
+
+<main id="top">
+  <div id="app"><div class="loading">Loading the latest CPI data…</div></div>
+</main>
 
 <script>
 (function(){
+  "use strict";
 
-  // ---------- CSV parsing ----------
+  // The model used by src/arima_forecast.py. Keep in sync if the order changes.
+  const MODEL_NAME = "ARIMA(1, 0, 2)";
+  const FED_TARGET = 2.0;
+  const REPO_URL = "https://github.com/ppc1004/ai-inflation-forecast";
+
+  // ================= helpers =================
   function splitCSVLine(line){
     const out=[]; let cur=''; let q=false;
     for(let i=0;i<line.length;i++){
@@ -191,634 +261,578 @@
   }
   function parseCSV(text){
     const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.length>0);
-    if(lines.length===0) return [];
+    if(!lines.length) return [];
     const headers = splitCSVLine(lines[0]);
     return lines.slice(1).map(line=>{
-      const cells = splitCSVLine(line);
-      const obj={};
-      headers.forEach((h,i)=>{ obj[h]=cells[i]; });
-      return obj;
+      const cells = splitCSVLine(line); const o={};
+      headers.forEach((h,i)=>{ o[h]=cells[i]; });
+      return o;
     });
   }
   const num = v => (v===undefined || v==='' || v===null) ? null : parseFloat(v);
-
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function fmtDate(d){ // d is a Date
-    return MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear();
-  }
-  function fmtDateLong(d){
-    const full=["January","February","March","April","May","June","July","August","September","October","November","December"];
-    return full[d.getUTCMonth()] + " " + d.getUTCFullYear();
-  }
-  function parseDate(s){
-    // "YYYY-MM-DD"
-    const parts = s.split('-').map(x=>parseInt(x,10));
-    return new Date(Date.UTC(parts[0], parts[1]-1, parts[2]||1));
-  }
-  function isoDate(d){
-    const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-  function sampleStd(arr){
-    const v = arr.filter(x=>x!=null && !isNaN(x));
-    const n=v.length;
-    if(n<2) return 0;
-    const mean = v.reduce((a,b)=>a+b,0)/n;
-    const variance = v.reduce((a,b)=>a+(b-mean)*(b-mean),0)/(n-1);
-    return Math.sqrt(variance);
-  }
-  function pctFmt(v, d=2){ return (v==null || isNaN(v)) ? "—" : v.toFixed(d) + "%"; }
-  function numFmt(v, d=2){ return (v==null || isNaN(v)) ? "—" : v.toFixed(d); }
+  const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const parseDate = s => { const p=s.split('-').map(x=>parseInt(x,10)); return new Date(Date.UTC(p[0], p[1]-1, p[2]||1)); };
+  const fmtMonth = d => MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear();
+  const fmtMonthLong = d => MONTHS_LONG[d.getUTCMonth()] + " " + d.getUTCFullYear();
+  const isoDate = d => d.toISOString().slice(0,10);
+  const pct = (v, d=1) => (v==null || isNaN(v)) ? "—" : v.toFixed(d) + "%";
+  const pp = (v, d=1) => (v==null || isNaN(v)) ? "—" : (v>0?"+":v<0?"−":"") + Math.abs(v).toFixed(d) + " pp";
+  const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const addMonths = (d, n) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+n, 1));
+  const cleanModel = s => String(s).replace(/\s+/g,' ').trim();
 
-  // ---------- Chart rendering (dependency-free inline SVG) ----------
-  function niceTicks(min,max,count){
-    // Round tick values (e.g. 2.0, 2.5, 3.0 or 250, 260, 270) that fully cover [min, max].
-    const span = (max - min) || 1;
-    const raw = span / count;
-    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
-    const start = Math.floor(min / step) * step;
-    const arr = [];
-    for (let i = 0; start + i * step < max + step - 1e-9; i++) arr.push(+(start + i * step).toFixed(10));
-    return arr;
-  }
-
-  function lineChart(container, opts){
-    const {
-      height=300, labels, series=[], band=null, hLines=[], scatter=null,
-      showAxis=true, showLegend=true, yFormat=(v)=>v.toFixed(2), yTitle=null
-    } = opts;
-    const W=1000, H=height;
-    const marginL = showAxis ? 52 : 4;
-    const marginR = 12;
-    const marginT = 10;
-    const marginB = showAxis ? 34 : 4;
-    const plotW = W-marginL-marginR, plotH = H-marginT-marginB;
-    const N = labels.length;
-    const xStep = N>1 ? plotW/(N-1) : 0;
-    const X = i => marginL + i*xStep;
-
-    let allVals=[];
-    series.forEach(s=>s.values.forEach(v=>{ if(v!=null && !isNaN(v)) allVals.push(v); }));
-    if(band){
-      band.upperValues.forEach(v=>{ if(v!=null && !isNaN(v)) allVals.push(v); });
-      band.lowerValues.forEach(v=>{ if(v!=null && !isNaN(v)) allVals.push(v); });
-    }
-    hLines.forEach(h=>allVals.push(h.value));
-    if(scatter) scatter.values.forEach(v=>{ if(v!=null && !isNaN(v)) allVals.push(v); });
-    if(allVals.length===0) allVals=[0,1];
-    let yMin=Math.min(...allVals), yMax=Math.max(...allVals);
-    if(yMin===yMax){ yMin-=1; yMax+=1; }
-    // Axis spans exactly from the first to the last nice tick.
-    const yTicks = niceTicks(yMin, yMax, 4);
-    yMin = yTicks[0]; yMax = yTicks[yTicks.length-1];
-    const Y = v => marginT + plotH - ((v-yMin)/(yMax-yMin))*plotH;
-
-    let svg = '';
-
-    // gridlines
-    if(showAxis){
-      const ticks = yTicks;
-      ticks.forEach(t=>{
-        const y = Y(t);
-        svg += `<line x1="${marginL}" y1="${y.toFixed(1)}" x2="${W-marginR}" y2="${y.toFixed(1)}" stroke="#eef2f7" stroke-width="1"/>`;
-        svg += `<text x="${marginL-8}" y="${(y+3).toFixed(1)}" font-size="10.5" fill="#64748b" text-anchor="end">${yFormat(t)}</text>`;
-      });
-      // x labels
-      const maxTicks=7;
-      const step=Math.max(1, Math.ceil(N/maxTicks));
-      for(let i=0;i<N;i+=step){
-        svg += `<text x="${X(i).toFixed(1)}" y="${H-8}" font-size="10.5" fill="#64748b" text-anchor="middle">${labels[i]}</text>`;
-      }
-      if((N-1) % step !== 0 && N>1){
-        svg += `<text x="${X(N-1).toFixed(1)}" y="${H-8}" font-size="10.5" fill="#64748b" text-anchor="middle">${labels[N-1]}</text>`;
-      }
-      if(yTitle){
-        svg += `<text x="12" y="${marginT+8}" font-size="10.5" fill="#64748b">${yTitle}</text>`;
-      }
-    }
-
-    // band
-    if(band){
-      const idxs=[];
-      for(let i=0;i<N;i++){ if(band.upperValues[i]!=null && band.lowerValues[i]!=null) idxs.push(i); }
-      if(idxs.length>0){
-        let d = `M ${X(idxs[0]).toFixed(1)} ${Y(band.upperValues[idxs[0]]).toFixed(1)}`;
-        for(let k=1;k<idxs.length;k++){ const i=idxs[k]; d += ` L ${X(i).toFixed(1)} ${Y(band.upperValues[i]).toFixed(1)}`; }
-        for(let k=idxs.length-1;k>=0;k--){ const i=idxs[k]; d += ` L ${X(i).toFixed(1)} ${Y(band.lowerValues[i]).toFixed(1)}`; }
-        d += ' Z';
-        svg += `<path d="${d}" fill="${band.color}" opacity="0.18" stroke="none"/>`;
-      }
-    }
-
-    // hLines — labeled directly on the chart, research-note style
-    hLines.forEach(h=>{
-      const y=Y(h.value);
-      svg += `<line x1="${marginL}" y1="${y.toFixed(1)}" x2="${W-marginR}" y2="${y.toFixed(1)}" stroke="${h.color}" stroke-width="1.5" stroke-dasharray="4,4"/>`;
-      if(showAxis && h.label){
-        svg += `<text x="${marginL+6}" y="${(y-6).toFixed(1)}" font-size="10.5" fill="${h.color}" font-style="italic">${h.label}</text>`;
-      }
-    });
-
-    // series lines
-    const enableHoverDots = N <= 220;
-    series.forEach(s=>{
-      let d=''; let started=false;
-      for(let i=0;i<N;i++){
-        const v=s.values[i];
-        if(v==null || isNaN(v)){ started=false; continue; }
-        d += (started?' L ':' M ') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1);
-        started=true;
-      }
-      svg += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2.4" ${s.dashed?'stroke-dasharray="6,4"':''} stroke-linejoin="round" stroke-linecap="round"/>`;
-      if(enableHoverDots){
-        for(let i=0;i<N;i++){
-          const v=s.values[i];
-          if(v==null || isNaN(v)) continue;
-          const cx=X(i).toFixed(1), cy=Y(v).toFixed(1);
-          svg += `<circle cx="${cx}" cy="${cy}" r="2" fill="${s.color}"/>`;
-          svg += `<circle cx="${cx}" cy="${cy}" r="8" fill="transparent"><title>${labels[i]} — ${s.label}: ${yFormat(v)}</title></circle>`;
-        }
-      }
-    });
-
-    // scatter (anomalies)
-    if(scatter){
-      for(let i=0;i<N;i++){
-        const v=scatter.values[i];
-        if(v==null || isNaN(v)) continue;
-        const cx=X(i), cy=Y(v);
-        svg += `<rect x="${(cx-4.5).toFixed(1)}" y="${(cy-4.5).toFixed(1)}" width="9" height="9" fill="${scatter.color}" transform="rotate(45 ${cx.toFixed(1)} ${cy.toFixed(1)})"><title>${labels[i]} — ${scatter.label}: ${yFormat(v)}</title></rect>`;
-      }
-    }
-
-    let legendHTML='';
-    if(showLegend){
-      const items=[];
-      series.forEach(s=> items.push(`<span class="li"><span class="swatch" style="background:${s.color}${s.dashed?';background-image:none':''}"></span>${s.label}</span>`));
-      if(band) items.push(`<span class="li"><span class="swatch area" style="background:${band.color};opacity:.35"></span>${band.label}</span>`);
-      if(scatter) items.push(`<span class="li"><span class="swatch dot" style="background:${scatter.color}"></span>${scatter.label}</span>`);
-      legendHTML = `<div class="legend">${items.join('')}</div>`;
-    }
-
-    container.innerHTML = `${legendHTML}<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible">${svg}</svg>`;
-  }
-
-  function barChart(container, opts){
-    const {height=280, labels, values, color="#1e3a5f", yFormat=(v)=>v.toFixed(2)} = opts;
-    const W=1000, H=height;
-    const marginL=52, marginR=12, marginT=10, marginB=60;
-    const plotW=W-marginL-marginR, plotH=H-marginT-marginB;
-    const N=labels.length;
-    const bandW = plotW/N;
-    const barW = Math.min(46, bandW*0.6);
-    let yMin=0, yMax=Math.max(...values);
-    if(yMax<=0) yMax=1;
-    const yTicks=niceTicks(0,yMax,4); yMax=yTicks[yTicks.length-1];
-    const Y = v => marginT + plotH - ((v-yMin)/(yMax-yMin))*plotH;
-
-    let svg='';
-    const ticks=yTicks;
-    ticks.forEach(t=>{
-      const y=Y(t);
-      svg += `<line x1="${marginL}" y1="${y.toFixed(1)}" x2="${W-marginR}" y2="${y.toFixed(1)}" stroke="#eef2f7" stroke-width="1"/>`;
-      svg += `<text x="${marginL-8}" y="${(y+3).toFixed(1)}" font-size="10.5" fill="#64748b" text-anchor="end">${yFormat(t)}</text>`;
-    });
-    for(let i=0;i<N;i++){
-      const cx = marginL + bandW*i + bandW/2;
-      const y = Y(values[i]);
-      const barH = (marginT+plotH) - y;
-      svg += `<rect x="${(cx-barW/2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(0,barH).toFixed(1)}" fill="${color}" rx="2"><title>${labels[i]}: ${yFormat(values[i])}</title></rect>`;
-      svg += `<text x="${cx.toFixed(1)}" y="${H-8}" font-size="10" fill="#64748b" text-anchor="end" transform="rotate(-35 ${cx.toFixed(1)} ${H-8})">${labels[i]}</text>`;
-    }
-    container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;overflow:visible">${svg}</svg>`;
-  }
-
-  // ---------- App ----------
-  const PRIMARY="#1e3a5f", ACCENT="#8a6d1f", MUTED_GRAY="#8a8f96", RED="#7a2e2e";
-  const FED_TARGET=2.0;
-
-  async function loadCSV(path){
+  async function loadCSV(path, optional){
     const res = await fetch(path, {cache:"no-store"});
-    if(!res.ok) throw new Error(`Failed to load ${path} (HTTP ${res.status})`);
+    if(!res.ok){ if(optional) return []; throw new Error(`Failed to load ${path} (HTTP ${res.status})`); }
     return parseCSV(await res.text());
   }
 
+  // Round tick values that fully cover [min, max].
+  function niceTicks(min, max, count){
+    const span = (max - min) || 1;
+    const raw = span / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m=>m*mag).find(s=>s>=raw);
+    const start = Math.floor(min/step)*step;
+    const out=[];
+    for(let i=0; start+i*step < max+step-1e-9; i++) out.push(+(start+i*step).toFixed(10));
+    return out;
+  }
+  function tickDecimals(ticks){
+    const step = ticks.length>1 ? Math.abs(ticks[1]-ticks[0]) : 1;
+    return step>=1 ? 0 : step>=0.1 ? 1 : 2;
+  }
+
+  // ================= charts (responsive inline SVG) =================
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const charts = [];
+  function mount(el, drawFn){ charts.push({el, drawFn}); drawFn(el); }
+  let resizeTimer=null, lastW=window.innerWidth;
+  window.addEventListener('resize', ()=>{
+    if(window.innerWidth===lastW) return; lastW=window.innerWidth;
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>charts.forEach(c=>{ if(document.body.contains(c.el)) c.drawFn(c.el); }), 120);
+  });
+
+  function monthTicks(t0, t1, width){
+    const months = (t1.getUTCFullYear()-t0.getUTCFullYear())*12 + (t1.getUTCMonth()-t0.getUTCMonth());
+    const maxTicks = Math.max(2, Math.floor(width/90));
+    const steps = [1,2,3,6,12,24,60,120,240];
+    const step = steps.find(s=>months/s <= maxTicks) || 240;
+    const ticks=[];
+    let d = new Date(Date.UTC(t0.getUTCFullYear(), 0, 1));
+    if(step<12){ d = new Date(Date.UTC(t0.getUTCFullYear(), Math.ceil(t0.getUTCMonth()/step)*step, 1)); }
+    else { const yStep=step/12; d = new Date(Date.UTC(Math.ceil(t0.getUTCFullYear()/yStep)*yStep, 0, 1)); }
+    while(d<=t1){ if(d>=t0) ticks.push(d); d = addMonths(d, step); }
+    const fmt = step>=12 ? (x=>String(x.getUTCFullYear())) : (x=>MONTHS[x.getUTCMonth()]+" '"+String(x.getUTCFullYear()).slice(2));
+    return {ticks, fmt};
+  }
+
+  /*
+    lineChart config:
+      dates: Date[]  (shared x for all series)
+      series: [{label, cls:'actual'|'model'|'ref', values:number[], dashed?, endLabel?}]
+      band:   {lower:number[], upper:number[], label}
+      refs:   [{value, label}]
+      height, yFmt(v, decimals), zeroLine
+  */
+  function lineChart(cfg){
+    return function draw(el){
+      const W = Math.max(280, el.clientWidth);
+      const H = cfg.height || 320;
+      const narrow = W < 520;
+      const m = {t:12, r: cfg.endLabels ? (narrow? 44 : 54) : 12, b:28, l:44};
+      const pw = W-m.l-m.r, ph = H-m.t-m.b;
+      const dates = cfg.dates, N = dates.length;
+      const t0 = dates[0], t1 = dates[N-1];
+      const X = d => m.l + (N>1 ? (d-t0)/(t1-t0)*pw : pw/2);
+
+      const vals=[];
+      cfg.series.forEach(s=>s.values.forEach(v=>{ if(v!=null && isFinite(v)) vals.push(v); }));
+      if(cfg.band){ cfg.band.lower.concat(cfg.band.upper).forEach(v=>{ if(v!=null && isFinite(v)) vals.push(v); }); }
+      (cfg.refs||[]).forEach(r=>vals.push(r.value));
+      if(cfg.zeroLine) vals.push(0);
+      let lo=Math.min(...vals), hi=Math.max(...vals);
+      if(lo===hi){ lo-=1; hi+=1; }
+      const yt = niceTicks(lo, hi, narrow?4:5);
+      const y0=yt[0], y1=yt[yt.length-1];
+      const Y = v => m.t + ph - (v-y0)/(y1-y0)*ph;
+      const dec = tickDecimals(yt);
+      const yFmt = cfg.yFmt || (v=>v.toFixed(dec));
+
+      let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(cfg.aria||'Chart')}">`;
+      // grid + y ticks
+      s += `<g class="grid">`;
+      yt.forEach(t=>{ s += `<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}"/>`; });
+      s += `</g>`;
+      yt.forEach(t=>{ s += `<text x="${m.l-8}" y="${(Y(t)+4).toFixed(1)}" text-anchor="end">${yFmt(t, dec)}</text>`; });
+      if(cfg.zeroLine && y0<0 && y1>0) s += `<line class="baseline" x1="${m.l}" x2="${W-m.r}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>`;
+      // x ticks
+      const mt = monthTicks(t0, t1, pw);
+      mt.ticks.forEach(d=>{ s += `<text x="${X(d).toFixed(1)}" y="${H-8}" text-anchor="middle">${mt.fmt(d)}</text>`; });
+      // band
+      if(cfg.band){
+        const idx=[]; for(let i=0;i<N;i++){ if(cfg.band.lower[i]!=null && cfg.band.upper[i]!=null) idx.push(i); }
+        if(idx.length){
+          let d = idx.map((i,k)=>(k?'L':'M')+X(dates[i]).toFixed(1)+' '+Y(cfg.band.upper[i]).toFixed(1)).join(' ');
+          d += ' ' + idx.slice().reverse().map(i=>'L'+X(dates[i]).toFixed(1)+' '+Y(cfg.band.lower[i]).toFixed(1)).join(' ') + ' Z';
+          s += `<path class="band-model" d="${d}"/>`;
+        }
+      }
+      // reference lines
+      (cfg.refs||[]).forEach(r=>{
+        const y=Y(r.value).toFixed(1);
+        s += `<line class="ref" x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}"/>`;
+        if(r.label) s += `<text class="ref-label" x="${m.l+6}" y="${(Y(r.value)-6).toFixed(1)}">${esc(r.label)}</text>`;
+      });
+      // series
+      cfg.series.forEach(se=>{
+        let d='', on=false;
+        for(let i=0;i<N;i++){
+          const v=se.values[i];
+          if(v==null || !isFinite(v)){ on=false; continue; }
+          d += (on?' L':' M') + X(dates[i]).toFixed(1) + ' ' + Y(v).toFixed(1); on=true;
+        }
+        s += `<path class="s s-${se.cls}${se.dashed?' dashed':''}" d="${d}"/>`;
+      });
+      // end markers + labels
+      cfg.series.forEach(se=>{
+        if(!se.endMarker) return;
+        let i=N-1; while(i>=0 && (se.values[i]==null || !isFinite(se.values[i]))) i--;
+        if(i<0) return;
+        const cx=X(dates[i]), cy=Y(se.values[i]);
+        s += `<circle class="dot-${se.cls} ring" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.5"/>`;
+        if(cfg.endLabels) s += `<text class="end-label" x="${(cx+9).toFixed(1)}" y="${(cy+4).toFixed(1)}">${esc(yFmt(se.values[i], 1))}</text>`;
+      });
+      // hover layer
+      s += `<line class="xhair" x1="0" x2="0" y1="${m.t}" y2="${m.t+ph}" visibility="hidden"/>`;
+      s += `<g class="hover-dots"></g>`;
+      s += `<rect class="hit" x="${m.l}" y="${m.t}" width="${pw}" height="${ph}" fill="transparent"/>`;
+      s += `</svg>`;
+      el.innerHTML = s;
+
+      const tip = document.createElement('div'); tip.className='tip'; el.appendChild(tip);
+      const svg = el.querySelector('svg'), xhair = svg.querySelector('.xhair'), hdots = svg.querySelector('.hover-dots'), hit = svg.querySelector('.hit');
+      const tipFmt = cfg.tipFmt || (v=>v.toFixed(2));
+      function show(evt){
+        const r = svg.getBoundingClientRect();
+        const px = (evt.clientX - r.left) * (W / r.width);
+        let best=0, bd=Infinity;
+        for(let i=0;i<N;i++){ const dd=Math.abs(X(dates[i])-px); if(dd<bd){ bd=dd; best=i; } }
+        const x = X(dates[best]);
+        xhair.setAttribute('x1', x); xhair.setAttribute('x2', x); xhair.setAttribute('visibility','visible');
+        hdots.innerHTML='';
+        tip.textContent='';
+        const dt=document.createElement('div'); dt.className='t-date'; dt.textContent=fmtMonthLong(dates[best]); tip.appendChild(dt);
+        let any=false;
+        cfg.series.forEach(se=>{
+          const v=se.values[best]; if(v==null || !isFinite(v)) return;
+          if(se.skipTipAt && se.skipTipAt(best)) return;
+          any=true;
+          const c=document.createElementNS(SVGNS,'circle');
+          c.setAttribute('cx',x); c.setAttribute('cy',Y(v)); c.setAttribute('r',4.5); c.setAttribute('class','ring dot-'+se.cls);
+          hdots.appendChild(c);
+          const row=document.createElement('div'); row.className='t-row';
+          const k=document.createElement('span'); k.className='t-key';
+          const sw=document.createElement('span'); sw.className='key-line'; sw.style.background=`var(--c-${se.cls==='actual'?'actual':se.cls==='model'?'model':'ref'})`;
+          k.appendChild(sw); k.appendChild(document.createTextNode(se.label));
+          const b=document.createElement('b'); b.textContent=tipFmt(v);
+          row.appendChild(k); row.appendChild(b); tip.appendChild(row);
+        });
+        if(cfg.band && cfg.band.lower[best]!=null){
+          const row=document.createElement('div'); row.className='t-row';
+          const k=document.createElement('span'); k.className='t-key'; k.textContent=cfg.band.label;
+          const b=document.createElement('b'); b.textContent=tipFmt(cfg.band.lower[best])+' – '+tipFmt(cfg.band.upper[best]);
+          row.appendChild(k); row.appendChild(b); tip.appendChild(row); any=true;
+        }
+        if(!any){ hide(); return; }
+        tip.style.opacity=1;
+        const scale = r.width / W;
+        const tw = tip.offsetWidth;
+        let left = x*scale + 14; if(left + tw > r.width) left = x*scale - tw - 14;
+        tip.style.left = Math.max(0,left)+'px'; tip.style.top = (m.t*scale + 4)+'px';
+      }
+      function hide(){ xhair.setAttribute('visibility','hidden'); hdots.innerHTML=''; tip.style.opacity=0; }
+      hit.addEventListener('pointermove', show);
+      hit.addEventListener('pointerdown', show);
+      hit.addEventListener('pointerleave', hide);
+    };
+  }
+
+  // Column chart (single series, may include negatives)
+  function columnChart(cfg){
+    return function draw(el){
+      const W = Math.max(280, el.clientWidth), H = cfg.height || 240;
+      const m = {t:12, r:12, b:28, l:44};
+      const pw=W-m.l-m.r, ph=H-m.t-m.b;
+      const N=cfg.values.length;
+      let lo=Math.min(0,...cfg.values), hi=Math.max(0,...cfg.values);
+      const yt=niceTicks(lo,hi,4), y0=yt[0], y1=yt[yt.length-1];
+      const Y=v=>m.t+ph-(v-y0)/(y1-y0)*ph;
+      const band=pw/N, bw=Math.min(24, band*0.62);
+      const dec=tickDecimals(yt);
+      let s=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(cfg.aria||'Chart')}"><g class="grid">`;
+      yt.forEach(t=>{ s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}"/>`; });
+      s+=`</g>`;
+      yt.forEach(t=>{ s+=`<text x="${m.l-8}" y="${(Y(t)+4).toFixed(1)}" text-anchor="end">${cfg.yFmt(t,dec)}</text>`; });
+      const mt = monthTicks(cfg.dates[0], cfg.dates[N-1], pw);
+      const idxOf = d => cfg.dates.findIndex(x=>x.getTime()===d.getTime());
+      mt.ticks.forEach(d=>{ const i=idxOf(d); if(i>=0) s+=`<text x="${(m.l+band*i+band/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${mt.fmt(d)}</text>`; });
+      const r=Math.min(4, bw/2);
+      for(let i=0;i<N;i++){
+        const v=cfg.values[i], cx=m.l+band*i+band/2, x=cx-bw/2, yb=Y(0), yv=Y(v);
+        const h=Math.abs(yb-yv);
+        let d;
+        if(h<0.5){ d=`M${x} ${yb} h${bw}`; }
+        else if(v>=0){ const rr=Math.min(r,h); d=`M${x} ${yb} V${yv+rr} Q${x} ${yv} ${x+rr} ${yv} H${x+bw-rr} Q${x+bw} ${yv} ${x+bw} ${yv+rr} V${yb} Z`; }
+        else { const rr=Math.min(r,h); d=`M${x} ${yb} V${yv-rr} Q${x} ${yv} ${x+rr} ${yv} H${x+bw-rr} Q${x+bw} ${yv} ${x+bw} ${yv-rr} V${yb} Z`; }
+        s+=`<path class="bar-actual" data-i="${i}" d="${d}"/>`;
+        s+=`<rect class="bar-hit" data-i="${i}" x="${(m.l+band*i).toFixed(1)}" y="${m.t}" width="${band.toFixed(1)}" height="${ph}" fill="transparent"/>`;
+      }
+      s+=`<line class="baseline" x1="${m.l}" x2="${W-m.r}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>`;
+      s+=`</svg>`;
+      el.innerHTML=s;
+      const tip=document.createElement('div'); tip.className='tip'; el.appendChild(tip);
+      const svg=el.querySelector('svg');
+      svg.querySelectorAll('.bar-hit').forEach(h=>{
+        const i=+h.dataset.i; const bar=svg.querySelector(`.bar-actual[data-i="${i}"]`);
+        const on=()=>{
+          bar.classList.add('hover');
+          tip.textContent='';
+          const dt=document.createElement('div'); dt.className='t-date'; dt.textContent=fmtMonthLong(cfg.dates[i]); tip.appendChild(dt);
+          const row=document.createElement('div'); row.className='t-row';
+          const k=document.createElement('span'); k.className='t-key'; k.textContent=cfg.label;
+          const b=document.createElement('b'); b.textContent=cfg.tipFmt(cfg.values[i]);
+          row.appendChild(k); row.appendChild(b); tip.appendChild(row);
+          const rct=svg.getBoundingClientRect(), sc=rct.width/W;
+          tip.style.opacity=1;
+          let left=(m.l+band*i+band)*sc+6; if(left+tip.offsetWidth>rct.width) left=(m.l+band*i)*sc-tip.offsetWidth-6;
+          tip.style.left=Math.max(0,left)+'px'; tip.style.top=(m.t*sc)+'px';
+        };
+        const off=()=>{ bar.classList.remove('hover'); tip.style.opacity=0; };
+        h.addEventListener('pointerenter', on); h.addEventListener('pointerdown', on); h.addEventListener('pointerleave', off);
+      });
+    };
+  }
+
+  // ================= app =================
   async function main(){
-    const root = document.getElementById('app-root');
-    let cpiRaw, forecastRaw, modelCompRaw, backtestRaw;
+    const app = document.getElementById('app');
+    let cpiRaw, fcRaw, btRaw, errRaw, mcRaw;
     try{
-      [cpiRaw, forecastRaw, modelCompRaw, backtestRaw] = await Promise.all([
+      [cpiRaw, fcRaw, btRaw, errRaw, mcRaw] = await Promise.all([
         loadCSV('data/cpi_data.csv'),
         loadCSV('data/yoy_forecast.csv'),
-        loadCSV('data/model_comparison.csv'),
         loadCSV('data/rolling_backtest.csv'),
+        loadCSV('data/backtest_errors.csv', true),
+        loadCSV('data/model_comparison.csv', true),
       ]);
     }catch(err){
-      root.innerHTML = `<div class="err-msg" style="margin:2rem;">
-        <b>Could not load data files.</b><br>
-        ${err.message}<br><br>
-        This page loads <code>data/*.csv</code> with <code>fetch()</code>, which requires being served over HTTP —
-        it won't work opened directly as a <code>file://</code> path. Serve it locally
-        (e.g. <code>python -m http.server</code>) or host it (e.g. GitHub Pages) with the
-        <code>data/</code> folder alongside <code>index.html</code>.
-      </div>`;
+      app.innerHTML = `<div class="error wrap">Could not load data files — ${esc(err.message)}.<br>This page must be served over HTTP (e.g. GitHub Pages or <code>python -m http.server</code>).</div>`;
       return;
     }
 
-    // ---- transform data ----
-    const rawData = cpiRaw
-      .map(r=>({date: parseDate(r.date), cpi: num(r.cpi)}))
-      .filter(r=>r.cpi!=null && !isNaN(r.cpi))
-      .sort((a,b)=>a.date-b.date);
-
-    // Rebuild a complete monthly series. BLS did not publish October 2025 CPI
-    // (government shutdown), so a missing month is filled by linear
-    // interpolation — the same approach as the Python pipeline.
-    // This guarantees data[i-12] is exactly 12 months before data[i].
-    const data = [];
-    for(let i=0;i<rawData.length;i++){
+    // ---- CPI → complete monthly series (BLS skipped Oct 2025; interpolate like the Python pipeline) ----
+    const raw = cpiRaw.map(r=>({date:parseDate(r.date), cpi:num(r.cpi)}))
+      .filter(r=>r.cpi!=null && !isNaN(r.cpi)).sort((a,b)=>a.date-b.date);
+    const data=[];
+    for(let i=0;i<raw.length;i++){
       if(i>0){
-        const prev = rawData[i-1], cur = rawData[i];
-        const gap = (cur.date.getUTCFullYear()-prev.date.getUTCFullYear())*12
-                  + (cur.date.getUTCMonth()-prev.date.getUTCMonth());
-        for(let k=1;k<gap;k++){
-          data.push({
-            date: new Date(Date.UTC(prev.date.getUTCFullYear(), prev.date.getUTCMonth()+k, 1)),
-            cpi: prev.cpi + (cur.cpi-prev.cpi)*k/gap,
-            interpolated: true
-          });
-        }
+        const p=raw[i-1], c=raw[i];
+        const gap=(c.date.getUTCFullYear()-p.date.getUTCFullYear())*12+(c.date.getUTCMonth()-p.date.getUTCMonth());
+        for(let k=1;k<gap;k++) data.push({date:addMonths(p.date,k), cpi:p.cpi+(c.cpi-p.cpi)*k/gap, interpolated:true});
       }
-      data.push(rawData[i]);
+      data.push(raw[i]);
     }
-    for(let i=0;i<data.length;i++){
-      data[i].mom = i>0 ? (data[i].cpi-data[i-1].cpi)/data[i-1].cpi*100 : null;
-      data[i].yoy = i>=12 ? (data[i].cpi-data[i-12].cpi)/data[i-12].cpi*100 : null;
-    }
-    const forecast = forecastRaw.map(r=>({
-      date: parseDate(r.date), mean: num(r.mean), se: num(r.mean_se),
-      ci_lower: num(r.mean_ci_lower), ci_upper: num(r.mean_ci_upper)
-    })).sort((a,b)=>a.date-b.date);
-    const modelComparison = modelCompRaw.map(r=>({order:r.order, mae:num(r.mae), rmse:num(r.rmse), aic:num(r.aic)}));
-    const rollingBacktest = backtestRaw.map(r=>({model:r.model, mae:num(r.mae), rmse:num(r.rmse)}));
+    data.forEach((d,i)=>{
+      d.mom = i>0 ? (d.cpi/data[i-1].cpi-1)*100 : null;
+      d.yoy = i>=12 ? (d.cpi/data[i-12].cpi-1)*100 : null;
+    });
+    const yoyData = data.filter(d=>d.yoy!=null);
+    const latest = data[data.length-1], prev = data[data.length-2];
 
-    const latest = data[data.length-1];
-    const previous = data[data.length-2];
-    const daysSinceUpdate = Math.floor((Date.now() - latest.date.getTime())/86400000);
+    const forecast = fcRaw.map(r=>({date:parseDate(r.date), mean:num(r.mean), lo:num(r.mean_ci_lower), hi:num(r.mean_ci_upper)}))
+      .filter(r=>r.mean!=null).sort((a,b)=>a.date-b.date);
+    const next = forecast[0];
 
-    // ---- build DOM shell ----
-    const targetGapInit = latest.yoy - FED_TARGET;
-    root.innerHTML = `
-      <aside class="sidebar">
-        <h2>Display Settings</h2>
-        <div class="field">
-          <label for="historySlider">History window (months): <span class="val" id="historyVal"></span></label>
-          <input type="range" id="historySlider" aria-label="History window in months">
+    const bt = btRaw.map(r=>({model:cleanModel(r.model), mae:num(r.mae), rmse:num(r.rmse)})).filter(r=>r.mae!=null);
+    const naive = bt.find(r=>/naive/i.test(r.model));
+    const model = bt.find(r=>r.model===MODEL_NAME) || bt.filter(r=>!/naive/i.test(r.model)).sort((a,b)=>a.rmse-b.rmse)[0];
+    const modelLabel = model ? model.model.replace(/\s/g,'') : MODEL_NAME.replace(/\s/g,'');
+    const maeGain = (model && naive) ? (1 - model.mae/naive.mae)*100 : null;
+
+    const errs = errRaw.map(r=>({date:parseDate(r.date), model:cleanModel(r.model), actual:num(r.actual), forecast:num(r.forecast), error:num(r.error), abs:num(r.abs_error)}));
+    const errModel = model ? errs.filter(e=>e.model===model.model).sort((a,b)=>a.date-b.date) : [];
+    const errNaive = errs.filter(e=>/naive/i.test(e.model)).sort((a,b)=>a.date-b.date);
+    const hasErrors = errModel.length>0 && errNaive.length===errModel.length;
+
+    const yoyChange = latest.yoy - prev.yoy;
+    const gap = latest.yoy - FED_TARGET;
+
+    // ================= page =================
+    app.innerHTML = `
+      <header class="hero wrap">
+        <div class="eyebrow">
+          <span class="pill"><span class="dot"></span>Data through ${fmtMonthLong(latest.date)}</span>
+          <span>CPI-U, all items, seasonally adjusted · Source: BLS via FRED</span>
         </div>
-        <div class="field">
-          <label for="forecastSlider">Forecast window (months): <span class="val" id="forecastVal"></span></label>
-          <input type="range" id="forecastSlider" aria-label="Forecast window in months">
-        </div>
-        <div class="caption">Adjust the sliders to change how much history and forecast is shown in the charts.</div>
-        <button class="btn" id="downloadBtn">Download CPI data (CSV) ↓</button>
-      </aside>
-      <main class="content">
-        <div class="masthead">
-          <div class="kicker">Independent research &amp; demonstration project</div>
-          <h1>AI Inflation Forecast</h1>
-          <p>Tracking U.S. CPI data and forecasting inflation with ARIMA models.</p>
-          <div class="meta-line">
-            <span title="Sourced from FRED (Federal Reserve Economic Data), CPI-U, All Items.">Latest data: <b>${fmtDateLong(latest.date)}</b></span>
-            &nbsp;·&nbsp;
-            <span title="CPI is published by the BLS with a built-in 2-6 week reporting lag, so this gap is normal, not a sign the data is stale.">Data freshness: <b>${daysSinceUpdate} days</b> since latest release</span>
+        <h1>U.S. inflation is running at ${pct(latest.yoy)}, ${Math.abs(gap)<0.05 ? "right at the Fed's 2% target" : Math.abs(gap).toFixed(1)+" points "+(gap>0?"above":"below")+" the Fed's 2% target"}.</h1>
+        <p class="lede">A statistical model (<b>${esc(modelLabel)}</b>) projects year-over-year CPI inflation of <b>${pct(next.mean)}</b> for ${fmtMonthLong(next.date)},
+          with a 95% interval of ${pct(next.lo)} to ${pct(next.hi)}. Every forecast is checked against a naive benchmark in a rolling backtest.</p>
+
+        <div class="kpis">
+          <div class="kpi hero">
+            <div class="kpi-label">Annual inflation (YoY)</div>
+            <div class="kpi-value num">${pct(latest.yoy)}</div>
+            <div class="kpi-sub">${Math.abs(yoyChange)<0.05 ? 'Unchanged vs '+fmtMonth(prev.date) : `<span class="${yoyChange>0?'delta-up':'delta-down'}">${pp(yoyChange)}</span> vs ${fmtMonth(prev.date)}`}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Monthly change (MoM)</div>
+            <div class="kpi-value num">${pct(latest.mom)}</div>
+            <div class="kpi-sub">${fmtMonth(latest.date)} vs ${fmtMonth(prev.date)}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Forecast, ${fmtMonth(next.date)}</div>
+            <div class="kpi-value num">${pct(next.mean)}</div>
+            <div class="kpi-sub">95% interval ${pct(next.lo)} – ${pct(next.hi)}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">${maeGain!=null && maeGain<0 ? 'Higher error than naive' : 'Lower error than naive'}</div>
+            <div class="kpi-value num">${maeGain!=null ? Math.abs(maeGain).toFixed(0)+'%' : '—'}</div>
+            <div class="kpi-sub">Backtest MAE ${model?model.mae.toFixed(2):'—'} vs ${naive?naive.mae.toFixed(2):'—'} pp</div>
           </div>
         </div>
-        <div class="disclaimer-bar">Personal research &amp; demonstration project — forecasts are statistical estimates, not financial, investment, or economic policy advice. Not affiliated with the Federal Reserve, BLS, or FRED.</div>
+      </header>
 
-        <div class="stat-row">
-          <div class="stat-main">
-            <div class="stat-number">${latest.yoy.toFixed(1)}%</div>
-            <div class="stat-sub">Annual inflation (YoY) estimate for ${fmtDateLong(latest.date)}</div>
-            <div class="stat-updated">Updated ${fmtDateLong(latest.date)} &nbsp;·&nbsp; Checked daily; forecast and backtests refresh with each monthly CPI release</div>
+      <section id="forecast" class="wrap">
+        <div class="sec-head">
+          <div>
+            <h2>Year-over-year inflation and 12-month forecast</h2>
+            <p class="sec-sub">Solid line: actual CPI inflation. Dashed line: model forecast. Shaded area: 95% confidence interval, which widens as the horizon grows.</p>
           </div>
-          <div class="stat-side">
-            <div class="side-item"><span class="side-label">Latest CPI (index)</span><span class="side-value">${latest.cpi.toFixed(3)}</span></div>
-            <div class="side-item"><span class="side-label">Monthly inflation (MoM)</span><span class="side-value">${pctFmt(latest.mom)}</span></div>
-            <div class="side-item"><span class="side-label">Gap to Fed's 2% target</span><span class="side-value ${targetGapInit>0?'up':'down'}">${targetGapInit>=0?'+':''}${targetGapInit.toFixed(2)} pp</span></div>
+          <div class="seg" role="group" aria-label="Time range" id="rangeSeg">
+            <button data-m="36" aria-pressed="true">3Y</button>
+            <button data-m="60" aria-pressed="false">5Y</button>
+            <button data-m="120" aria-pressed="false">10Y</button>
+            <button data-m="0" aria-pressed="false">All</button>
           </div>
         </div>
-
-        <div class="tabs">
-          <button class="tab-btn active" data-tab="overview">Overview</button>
-          <button class="tab-btn" data-tab="history">Historical Data</button>
-          <button class="tab-btn" data-tab="forecast">Forecast</button>
-          <button class="tab-btn" data-tab="backtest">Model Backtest</button>
+        <div class="card">
+          <div class="legend">
+            <span><i class="key-line" style="background:var(--c-actual)"></i>Actual</span>
+            <span><i class="key-dash" style="border-color:var(--c-model)"></i>Forecast</span>
+            <span><i class="key-area" style="background:var(--c-model);opacity:.3"></i>95% interval</span>
+          </div>
+          <div class="chart" id="mainChart"></div>
+          <details class="more">
+            <summary>Forecast table</summary>
+            <table style="margin-top:8px">
+              <thead><tr><th>Month</th><th class="r">Forecast</th><th class="r">95% interval</th></tr></thead>
+              <tbody>
+                ${forecast.map(r=>`<tr><td>${fmtMonth(r.date)}</td><td class="r">${pct(r.mean)}</td><td class="r range-cell">${pct(r.lo)} – ${pct(r.hi)}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </details>
         </div>
+      </section>
 
-        <div class="tab-panel active" id="tab-overview"></div>
-        <div class="tab-panel" id="tab-history"></div>
-        <div class="tab-panel" id="tab-forecast"></div>
-        <div class="tab-panel" id="tab-backtest"></div>
+      <section id="track-record" class="wrap">
+        <div class="sec-head">
+          <div>
+            <h2>Track record</h2>
+            <p class="sec-sub">Rolling-origin backtest over the last ${hasErrors?errModel.length:24} months: each month the model is re-fit on data available at the time and forecasts one month ahead. The naive benchmark simply repeats last month's inflation rate.</p>
+          </div>
+        </div>
+        <div class="callouts" id="callouts"></div>
+        <div class="card" id="errCard" ${hasErrors?'':'hidden'}>
+          <p class="card-title">Forecast error over time</p>
+          <p class="card-sub">Actual minus forecast, in percentage points. Above zero means the forecast was too low.</p>
+          <div class="legend">
+            <span><i class="key-line" style="background:var(--c-model)"></i>${esc(modelLabel)}</span>
+            <span><i class="key-line" style="background:var(--c-ref)"></i>Naive benchmark</span>
+          </div>
+          <div class="chart" id="errChart"></div>
+        </div>
+        <div class="card">
+          <p class="card-title">Model comparison</p>
+          <p class="card-sub">Mean absolute error (MAE) of one-month-ahead forecasts, lower is better. Bars show MAE; RMSE penalises large misses more heavily.</p>
+          <div class="lb" id="leaderboard"></div>
+        </div>
+      </section>
 
-        <div class="footer-note">Personal research &amp; demonstration project — not financial advice.</div>
-      </main>
+      <section id="history" class="wrap">
+        <div class="sec-head">
+          <div>
+            <h2>History</h2>
+            <p class="sec-sub">Year-over-year CPI inflation since ${yoyData[0].date.getUTCFullYear()}, and the most recent three years of month-over-month changes.</p>
+          </div>
+        </div>
+        <div class="card">
+          <p class="card-title">Year-over-year inflation, ${yoyData[0].date.getUTCFullYear()}–${latest.date.getUTCFullYear()}</p>
+          <p class="card-sub">Peak ${pct(Math.max(...yoyData.map(d=>d.yoy)))} (${fmtMonth(yoyData.reduce((a,b)=>b.yoy>a.yoy?b:a).date)}). Dashed line marks the Fed's 2% target.</p>
+          <div class="chart" id="longChart"></div>
+        </div>
+        <div class="card">
+          <p class="card-title">Month-over-month change, last 36 months</p>
+          <p class="card-sub">Percent change in the CPI index from the previous month.${data.some(d=>d.interpolated)?' October 2025 was not published by BLS and is interpolated.':''}</p>
+          <div class="chart" id="momChart"></div>
+          <details class="more">
+            <summary>Data table &amp; download</summary>
+            <div class="scroll">
+              <table>
+                <thead><tr><th>Month</th><th class="r">CPI index</th><th class="r">MoM</th><th class="r">YoY</th></tr></thead>
+                <tbody>
+                  ${data.slice(-36).reverse().map(r=>`<tr><td>${fmtMonth(r.date)}${r.interpolated?' <span class="tag">interpolated</span>':''}</td><td class="r">${r.cpi.toFixed(3)}</td><td class="r">${pct(r.mom,2)}</td><td class="r">${pct(r.yoy,2)}</td></tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+            <p style="margin:10px 0 0"><a href="#" id="dl" style="font-size:13.5px">Download full series (CSV)</a></p>
+          </details>
+        </div>
+      </section>
+
+      <section id="methodology" class="wrap">
+        <div class="sec-head"><div><h2>Methodology</h2></div></div>
+        <div class="method">
+          <div class="card">
+            <h3>Data</h3>
+            <p>Monthly CPI for All Urban Consumers (CPI-U, all items, seasonally adjusted; FRED series <code>CPIAUCSL</code>). Inflation is the 12-month percent change of the index.
+            BLS did not publish October 2025 CPI because of the federal government shutdown; that month is filled by linear interpolation so every YoY rate compares the same calendar month a year apart.</p>
+          </div>
+          <div class="card">
+            <h3>Model</h3>
+            <p>An ${esc(modelLabel)} model is fit to the full YoY inflation series and projects 12 months ahead with 95% confidence intervals.
+            The order was selected by comparing nine candidate ARIMA specifications on out-of-sample error rather than in-sample fit.</p>
+          </div>
+          <div class="card">
+            <h3>Evaluation</h3>
+            <ul>
+              <li>Rolling-origin backtest over the last 24 months, expanding training window, one-step-ahead forecasts.</li>
+              <li>Metrics: MAE and RMSE in percentage points, against a naive "no change" benchmark.</li>
+              <li>Per-month errors are published so accuracy can be checked for stability, not just on average.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Pipeline &amp; limitations</h3>
+            <p>A GitHub Actions job checks FRED daily and re-runs the models when a new CPI release lands.</p>
+            <div class="pipeline"><span class="step">FRED CPI</span><span class="arrow">→</span><span class="step">Python · statsmodels</span><span class="arrow">→</span><span class="step">CSV outputs</span><span class="arrow">→</span><span class="step">This page</span></div>
+            <p style="margin-top:10px">Univariate ARIMA uses only past inflation; it does not see energy prices, wages or policy changes, and tends to lag turning points. Treat long-horizon intervals as wide for a reason.</p>
+          </div>
+        </div>
+      </section>
     `;
 
-    // tabs
-    document.querySelectorAll('.tab-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    // ---------- main chart ----------
+    const mainEl = document.getElementById('mainChart');
+    let rangeMonths = 36;
+    function mainCfg(){
+      const hist = rangeMonths ? yoyData.slice(-rangeMonths) : yoyData;
+      const last = hist[hist.length-1];
+      const dates = hist.map(d=>d.date).concat(forecast.map(f=>f.date));
+      const H = hist.length, F = forecast.length;
+      const pad = n => Array(n).fill(null);
+      // forecast line & band start at the last actual point so the two connect
+      const fcVals = pad(H-1).concat([last.yoy], forecast.map(f=>f.mean));
+      const lo = pad(H-1).concat([last.yoy], forecast.map(f=>f.lo));
+      const hi = pad(H-1).concat([last.yoy], forecast.map(f=>f.hi));
+      return {
+        aria:'Year-over-year CPI inflation with 12-month forecast',
+        height: window.innerWidth<560 ? 280 : 380,
+        dates,
+        series:[
+          {label:'Actual', cls:'actual', values: hist.map(d=>d.yoy).concat(pad(F)), endMarker:true},
+          {label:'Forecast', cls:'model', dashed:true, values: fcVals, skipTipAt: i=>i===H-1},
+        ],
+        band:{lower:lo, upper:hi, label:'95% interval'},
+        refs:[{value:FED_TARGET, label:'Fed target 2%'}],
+        yFmt:(v,d)=>v.toFixed(d)+'%',
+        tipFmt:v=>v.toFixed(2)+'%',
+      };
+    }
+    const drawMain = el => lineChart(mainCfg())(el);
+    mount(mainEl, drawMain);
+    document.querySelectorAll('#rangeSeg button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        document.querySelectorAll('#rangeSeg button').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false'));
+        rangeMonths = +b.dataset.m; drawMain(mainEl);
       });
     });
 
-    // sliders
-    const historySlider = document.getElementById('historySlider');
-    const forecastSlider = document.getElementById('forecastSlider');
-    historySlider.min = 12; historySlider.max = data.length; historySlider.step = 6;
-    historySlider.value = Math.min(36, data.length);
-    forecastSlider.min = 1; forecastSlider.max = forecast.length; forecastSlider.step = 1;
-    forecastSlider.value = forecast.length;
-
-    function currentWindow(){
-      return { historyMonths: parseInt(historySlider.value,10), forecastMonths: parseInt(forecastSlider.value,10) };
+    // ---------- track record ----------
+    const callouts = document.getElementById('callouts');
+    if(hasErrors){
+      let wins=0; errModel.forEach((e,i)=>{ if(e.abs < errNaive[i].abs) wins++; });
+      const worst = errModel.reduce((a,b)=>b.abs>a.abs?b:a);
+      callouts.innerHTML = `
+        <div class="callout"><div class="kpi-label">Average miss (MAE)</div><div class="kpi-value num">${model.mae.toFixed(2)} <small>pp</small></div><div class="kpi-sub">Naive benchmark: ${naive.mae.toFixed(2)} pp</div></div>
+        <div class="callout"><div class="kpi-label">Beat the benchmark</div><div class="kpi-value num">${wins} <small>of ${errModel.length} months</small></div><div class="kpi-sub">Closer to the actual print than "no change"</div></div>
+        <div class="callout"><div class="kpi-label">Largest miss</div><div class="kpi-value num">${pp(worst.error,2)}</div><div class="kpi-sub">${fmtMonthLong(worst.date)}: forecast ${pct(worst.forecast,2)}, actual ${pct(worst.actual,2)}</div></div>`;
+      mount(document.getElementById('errChart'), lineChart({
+        aria:'Monthly forecast error of the model and the naive benchmark',
+        height: 260,
+        dates: errModel.map(e=>e.date),
+        series:[
+          {label:'Naive benchmark', cls:'ref', values: errNaive.map(e=>e.error)},
+          {label: modelLabel, cls:'model', values: errModel.map(e=>e.error)},
+        ],
+        zeroLine:true,
+        yFmt:(v,d)=>(v>0?'+':'')+v.toFixed(d),
+        tipFmt:v=>(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(2)+' pp',
+      }));
+    } else if(model && naive){
+      callouts.innerHTML = `
+        <div class="callout"><div class="kpi-label">Average miss (MAE)</div><div class="kpi-value num">${model.mae.toFixed(2)} <small>pp</small></div><div class="kpi-sub">${esc(modelLabel)}</div></div>
+        <div class="callout"><div class="kpi-label">Naive benchmark MAE</div><div class="kpi-value num">${naive.mae.toFixed(2)} <small>pp</small></div><div class="kpi-sub">"Next month = this month"</div></div>
+        <div class="callout"><div class="kpi-label">Improvement</div><div class="kpi-value num">${maeGain.toFixed(0)}%</div><div class="kpi-sub">Lower average error</div></div>`;
     }
 
-    document.getElementById('downloadBtn').addEventListener('click', ()=>{
-      const {historyMonths} = currentWindow();
-      const rows = data.slice(-historyMonths);
-      let csv = "date,cpi,mom,yoy\n";
-      rows.forEach(r=>{
-        csv += `${isoDate(r.date)},${r.cpi ?? ''},${r.mom!=null?r.mom:''},${r.yoy!=null?r.yoy:''}\n`;
-      });
-      const blob = new Blob([csv], {type:'text/csv'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'cpi_data.csv';
+    const lb = document.getElementById('leaderboard');
+    const sorted = bt.slice().sort((a,b)=>a.mae-b.mae);
+    const maxMae = Math.max(...sorted.map(r=>r.mae));
+    lb.innerHTML = `<div class="lb-row lb-head"><span>Model</span><span></span><span class="lb-v">MAE</span><span class="lb-v lb-rmse">RMSE</span></div>` +
+      sorted.map(r=>{
+        const isModel = model && r.model===model.model, isNaive = /naive/i.test(r.model);
+        const name = isNaive ? 'Naive benchmark' : r.model.replace(/\s/g,'');
+        return `<div class="lb-row ${isModel?'is-model':''} ${isNaive?'is-naive':''}">
+          <span class="lb-name">${esc(name)}${isModel?'<span class="tag">in use</span>':''}</span>
+          <span class="lb-track"><span class="lb-bar" style="display:block;width:${(r.mae/maxMae*100).toFixed(1)}%"></span></span>
+          <span class="lb-v">${r.mae.toFixed(3)}</span>
+          <span class="lb-v lb-rmse">${r.rmse.toFixed(3)}</span>
+        </div>`;
+      }).join('');
+
+    // ---------- history ----------
+    mount(document.getElementById('longChart'), lineChart({
+      aria:'Year-over-year CPI inflation, full history',
+      height: window.innerWidth<560 ? 240 : 300,
+      dates: yoyData.map(d=>d.date),
+      series:[{label:'YoY inflation', cls:'actual', values: yoyData.map(d=>d.yoy)}],
+      refs:[{value:FED_TARGET, label:''}],
+      zeroLine:true,
+      yFmt:(v,d)=>v.toFixed(d)+'%',
+      tipFmt:v=>v.toFixed(2)+'%',
+    }));
+    const mom = data.slice(-36);
+    mount(document.getElementById('momChart'), columnChart({
+      aria:'Month-over-month CPI change, last 36 months',
+      height: 220, dates: mom.map(d=>d.date), values: mom.map(d=>d.mom),
+      label:'MoM change', yFmt:(v,d)=>v.toFixed(Math.max(1,d))+'%', tipFmt:v=>v.toFixed(2)+'%',
+    }));
+
+    document.getElementById('dl').addEventListener('click', e=>{
+      e.preventDefault();
+      let csv = "date,cpi,mom_pct,yoy_pct,interpolated\n";
+      data.forEach(r=>{ csv += `${isoDate(r.date)},${r.cpi.toFixed(3)},${r.mom!=null?r.mom.toFixed(4):''},${r.yoy!=null?r.yoy.toFixed(4):''},${r.interpolated?1:0}\n`; });
+      const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='us_cpi_inflation.csv';
       document.body.appendChild(a); a.click(); a.remove();
     });
 
-    function render(){
-      const {historyMonths, forecastMonths} = currentWindow();
-      document.getElementById('historyVal').textContent = historyMonths;
-      document.getElementById('forecastVal').textContent = forecastMonths;
-      renderOverview(historyMonths, forecastMonths);
-      renderHistory(historyMonths);
-      renderForecastTab(forecastMonths);
-      renderBacktest();
-    }
-
-    historySlider.addEventListener('input', render);
-    forecastSlider.addEventListener('input', render);
-
-    // ---------------- Overview tab ----------------
-    function renderOverview(historyMonths, forecastMonths){
-      const el = document.getElementById('tab-overview');
-
-      const yoyChange = latest.yoy - previous.yoy;
-      let trendPhrase;
-      if(yoyChange > 0.05) trendPhrase = `up ${yoyChange.toFixed(2)} pp from last month`;
-      else if(yoyChange < -0.05) trendPhrase = `down ${Math.abs(yoyChange).toFixed(2)} pp from last month`;
-      else trendPhrase = "roughly unchanged from last month";
-
-      const targetGap = latest.yoy - FED_TARGET;
-      const targetPhrase = targetGap > 0
-        ? `${targetGap.toFixed(2)} pp above the Federal Reserve's ${FED_TARGET.toFixed(0)}% target`
-        : `${Math.abs(targetGap).toFixed(2)} pp below (or at) the Federal Reserve's ${FED_TARGET.toFixed(0)}% target`;
-
-      el.innerHTML = `
-        <div class="info-box">Annual inflation (YoY) is currently <b>${latest.yoy.toFixed(2)}%</b>, ${trendPhrase}, and is ${targetPhrase}.</div>
-
-        <div class="subcaption">Last 12 months YoY trend</div>
-        <div class="chart-box" id="sparkline" style="margin-bottom:1.4rem;"></div>
-
-        <h3 class="section-title">YoY Inflation Forecast (with confidence interval)</h3>
-        <div class="subcaption">The shaded band shows the model's confidence interval — narrower means the model is more certain.</div>
-        <div class="chart-box" id="mainForecastChart"></div>
-
-        <hr class="divider">
-        <details class="expander">
-          <summary>About this project / Methodology &amp; Disclaimer</summary>
-          <div class="exp-body">
-            <p><b>Data source:</b> U.S. CPI (All Items) data is sourced from the Federal Reserve Economic Data (FRED) database, published by the Federal Reserve Bank of St. Louis, and updated automatically once a day.</p>
-            <p><b>Method:</b> Forecasts are generated with an ARIMA (AutoRegressive Integrated Moving Average) time series model. The best parameter combination is chosen using rolling backtests (see the Model Backtest tab). The shaded band on the forecast chart is the model's confidence interval — it widens for months further in the future because uncertainty naturally grows the further out a statistical model tries to predict.</p>
-            <p><b>Disclaimer:</b> This dashboard is a personal research and demonstration project. Forecasts are statistical estimates only, are not guaranteed to be accurate, and should not be treated as financial, investment, or economic policy advice.</p>
-          </div>
-        </details>
-        <details class="expander">
-          <summary>Frequently Asked Questions</summary>
-          <div class="exp-body">
-            <p><b>Why does the confidence interval get wider further out?</b> ARIMA models estimate uncertainty based on how far into the future a prediction reaches. Since each future month depends on the previous one, small errors compound, so the model is less certain the further ahead it forecasts.</p>
-            <p><b>What's the difference between MAE and RMSE?</b> MAE (Mean Absolute Error) is the average size of the forecast error, treating all errors equally. RMSE (Root Mean Squared Error) squares errors before averaging, so it penalizes larger mistakes more heavily. If RMSE is much higher than MAE, it usually means the model had a few larger misses.</p>
-          </div>
-        </details>
-      `;
-
-      // sparkline
-      const spark = data.filter(d=>d.yoy!=null).slice(-12);
-      lineChart(document.getElementById('sparkline'), {
-        height:70, showAxis:false, showLegend:false,
-        labels: spark.map(d=>fmtDate(d.date)),
-        series:[{key:'yoy', label:'YoY', color:PRIMARY, values: spark.map(d=>d.yoy)}]
-      });
-
-      // main forecast chart: combine historical window + forecast window
-      const histWindow = data.filter(d=>d.yoy!=null).slice(-historyMonths);
-      const fcWindow = forecast.slice(0, forecastMonths);
-      const dateKey = d => d.getTime();
-      const labelMap = new Map(); // time -> label
-      histWindow.forEach(d=>labelMap.set(dateKey(d.date), fmtDate(d.date)));
-      fcWindow.forEach(d=>labelMap.set(dateKey(d.date), fmtDate(d.date)));
-      const times = Array.from(labelMap.keys()).sort((a,b)=>a-b);
-      const labels = times.map(t=>labelMap.get(t));
-
-      const actualValues = times.map(t=>{
-        const row = histWindow.find(d=>dateKey(d.date)===t);
-        return row ? row.yoy : null;
-      });
-      const forecastValues = times.map(t=>{
-        const row = fcWindow.find(d=>dateKey(d.date)===t);
-        return row ? row.mean : null;
-      });
-      const ciLower = times.map(t=>{
-        const row = fcWindow.find(d=>dateKey(d.date)===t);
-        return row ? row.ci_lower : null;
-      });
-      const ciUpper = times.map(t=>{
-        const row = fcWindow.find(d=>dateKey(d.date)===t);
-        return row ? row.ci_upper : null;
-      });
-
-      lineChart(document.getElementById('mainForecastChart'), {
-        height:380, yTitle:"YoY Inflation (%)",
-        labels,
-        series:[
-          {key:'actual', label:'Actual', color:PRIMARY, values:actualValues},
-          {key:'forecast', label:'Forecast', color:ACCENT, dashed:true, values:forecastValues},
-        ],
-        band:{upperValues:ciUpper, lowerValues:ciLower, color:ACCENT, label:'Confidence interval'},
-        hLines:[{value:FED_TARGET, color:MUTED_GRAY, label:'Fed Target (2%)'}],
-        yFormat:v=>v.toFixed(1)+'%'
-      });
-    }
-
-    // ---------------- Historical Data tab ----------------
-    function renderHistory(historyMonths){
-      const el = document.getElementById('tab-history');
-      const windowRows = data.slice(-historyMonths);
-      const yoySeries = windowRows.filter(d=>d.yoy!=null).map(d=>d.yoy);
-
-      el.innerHTML = `
-        <h3 class="section-title">Historical CPI</h3>
-        <div class="chart-box" id="cpiChart" style="margin-bottom:1.2rem;"></div>
-
-        <div class="metrics">
-          <div class="metric"><div class="m-label">Avg YoY (window)</div><div class="m-value">${pctFmt(avg(yoySeries))}</div></div>
-          <div class="metric"><div class="m-label">Max YoY (window)</div><div class="m-value">${pctFmt(Math.max(...yoySeries))}</div></div>
-          <div class="metric"><div class="m-label">Min YoY (window)</div><div class="m-value">${pctFmt(Math.min(...yoySeries))}</div></div>
-        </div>
-
-        <div class="cols2">
-          <div>
-            <h3 class="section-title">YoY Inflation</h3>
-            <div class="chart-box" id="yoyChart"></div>
-          </div>
-          <div>
-            <h3 class="section-title">MoM Inflation</h3>
-            <div class="chart-box" id="momChart"></div>
-          </div>
-        </div>
-
-        <details class="expander" style="margin-top:1.4rem;">
-          <summary>View raw data table</summary>
-          <div class="exp-body">
-            <div class="table-wrap" style="max-height:420px;">
-              <table>
-                <thead><tr><th>Date</th><th>CPI</th><th>MoM (%)</th><th>YoY (%)</th></tr></thead>
-                <tbody>
-                  ${windowRows.slice().reverse().map(r=>`<tr><td>${isoDate(r.date)}</td><td>${numFmt(r.cpi,3)}</td><td>${pctFmt(r.mom)}</td><td>${pctFmt(r.yoy)}</td></tr>`).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </details>
-      `;
-
-      function avg(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
-
-      lineChart(document.getElementById('cpiChart'), {
-        height:260,
-        labels: windowRows.map(d=>fmtDate(d.date)),
-        series:[{key:'cpi', label:'CPI', color:PRIMARY, values: windowRows.map(d=>d.cpi)}],
-        showLegend:false
-      });
-
-      const yoyRows = windowRows.filter(d=>d.yoy!=null);
-      lineChart(document.getElementById('yoyChart'), {
-        height:300,
-        labels: yoyRows.map(d=>fmtDate(d.date)),
-        series:[{key:'yoy', label:'Actual', color:PRIMARY, values: yoyRows.map(d=>d.yoy)}],
-        hLines:[{value:FED_TARGET, color:MUTED_GRAY, label:'Fed Target (2%)'}],
-        yFormat:v=>v.toFixed(1)+'%'
-      });
-
-      lineChart(document.getElementById('momChart'), {
-        height:300,
-        labels: windowRows.map(d=>fmtDate(d.date)),
-        series:[{key:'mom', label:'MoM', color:ACCENT, values: windowRows.map(d=>d.mom)}],
-        showLegend:false,
-        yFormat:v=>v.toFixed(1)+'%'
-      });
-    }
-
-    // ---------------- Forecast tab ----------------
-    function renderForecastTab(forecastMonths){
-      const el = document.getElementById('tab-forecast');
-      const rows = forecast.slice(0, forecastMonths);
-      el.innerHTML = `
-        <h3 class="section-title">Forecast Detail</h3>
-        <div class="subcaption">Last 24 months of actual YoY inflation, followed by the model's forecast with a 95% confidence interval.</div>
-        <div class="chart-box" id="forecastTabChart" style="margin-bottom:1.4rem;"></div>
-        <div class="subcaption">Point forecast with 95% confidence interval</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Month</th><th>Forecast</th><th>Low (95%)</th><th>High (95%)</th></tr></thead>
-            <tbody>
-              ${rows.map(r=>`<tr><td>${fmtDate(r.date)}</td><td>${pctFmt(r.mean)}</td><td>${pctFmt(r.ci_lower)}</td><td>${pctFmt(r.ci_upper)}</td></tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
-
-      // Chart: last 24 months of actual YoY, then the forecast months
-      const hist = data.filter(d=>d.yoy!=null).slice(-24);
-      const blankHist = hist.map(()=>null);
-      const blankFc = rows.map(()=>null);
-      lineChart(document.getElementById('forecastTabChart'), {
-        height: 320, yTitle: "YoY Inflation (%)",
-        labels: [...hist.map(d=>fmtDate(d.date)), ...rows.map(r=>fmtDate(r.date))],
-        series: [
-          {key:'actual', label:'Actual', color:PRIMARY, values:[...hist.map(d=>d.yoy), ...blankFc]},
-          {key:'forecast', label:'Forecast', color:ACCENT, dashed:true, values:[...blankHist, ...rows.map(r=>r.mean)]},
-        ],
-        band: {upperValues:[...blankHist, ...rows.map(r=>r.ci_upper)], lowerValues:[...blankHist, ...rows.map(r=>r.ci_lower)], color:ACCENT, label:'95% confidence interval'},
-        hLines: [{value:FED_TARGET, color:MUTED_GRAY, label:'Fed Target (2%)'}],
-        yFormat: v=>v.toFixed(1)+'%'
-      });
-    }
-
-    // ---------------- Model Backtest tab ----------------
-    function renderBacktest(){
-      const el = document.getElementById('tab-backtest');
-      const bt = rollingBacktest.slice().sort((a,b)=>a.rmse-b.rmse);
-      const bestMae = Math.min(...rollingBacktest.map(r=>r.mae));
-      const mc = modelComparison.slice().sort((a,b)=>a.rmse-b.rmse);
-
-      el.innerHTML = `
-        <h3 class="section-title">Rolling Backtest Results (sorted by RMSE)</h3>
-        <div class="subcaption">MAE / RMSE are forecast error metrics — lower means the model was more accurate historically. 'Naive baseline' simply repeats last month's value, used as a reference point.</div>
-        <div class="info-box">
-          <b>What this means:</b> In the rolling backtest, the lowest mean absolute error (MAE) among the models tested was <b>${bestMae.toFixed(2)} percentage points</b>.
-          In other words, its one-month-ahead forecasts missed actual YoY inflation by about that much on average. (MAE is an average miss, not a confidence interval.)
-        </div>
-        <div class="table-wrap" style="margin-bottom:1rem;">
-          <table>
-            <thead><tr><th>Model</th><th>MAE</th><th>RMSE</th></tr></thead>
-            <tbody>
-              ${bt.map(r=>`<tr><td>${r.model}</td><td>${numFmt(r.mae,4)}</td><td>${numFmt(r.rmse,4)}</td></tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-
-        <details class="expander">
-          <summary>View full ARIMA parameter comparison</summary>
-          <div class="exp-body">
-            <div class="chart-box" id="rmseChart" style="margin-bottom:1rem;"></div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Order</th><th>MAE</th><th>RMSE</th><th>AIC</th></tr></thead>
-                <tbody>
-                  ${mc.map(r=>`<tr><td>${r.order}</td><td>${numFmt(r.mae,4)}</td><td>${numFmt(r.rmse,4)}</td><td>${numFmt(r.aic,1)}</td></tr>`).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </details>
-      `;
-
-      barChart(document.getElementById('rmseChart'), {
-        height:280,
-        labels: mc.map(r=>r.order),
-        values: mc.map(r=>r.rmse),
-        color: PRIMARY,
-        yFormat: v=>v.toFixed(2)
-      });
-    }
-
-    render();
+    // footer
+    const f = document.createElement('footer');
+    f.innerHTML = `<div class="wrap"><span>Personal research project. Statistical estimates only — not investment or policy advice. Not affiliated with BLS, FRED or the Federal Reserve.</span>
+      <span>Data: <a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" rel="noopener">FRED CPIAUCSL</a> · <a href="${REPO_URL}" target="_blank" rel="noopener">Source code</a></span></div>`;
+    document.body.appendChild(f);
   }
 
   main();
