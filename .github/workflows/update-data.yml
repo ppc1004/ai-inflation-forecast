@@ -26,6 +26,12 @@ jobs:
       - name: Download latest CPI data
         run: python src/download_cpi.py
 
+      # Components, average prices, wages, rates and expectations for the
+      # website's context pages. A failure here must not block the forecast.
+      - name: Download supporting FRED series
+        continue-on-error: true
+        run: python src/download_extra.py
+
       - name: Check whether CPI data changed
         id: cpi_diff
         run: |
@@ -44,6 +50,7 @@ jobs:
         if: steps.cpi_diff.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           python src/arima_forecast.py
+          python src/archive_forecast.py
           python src/model_comparison.py
           python src/rolling_backtest.py
 
