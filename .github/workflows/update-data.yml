@@ -37,9 +37,11 @@ jobs:
 
       # The forecast, model-comparison, and rolling-backtest CSVs are all
       # derived from cpi_data.csv. They only need to be regenerated when a
-      # new CPI release actually lands, so this only runs on real changes.
+      # new CPI release actually lands, so this only runs on real changes —
+      # or when the workflow is started manually (Run workflow button),
+      # e.g. after changing the model code.
       - name: Regenerate forecast and backtest outputs
-        if: steps.cpi_diff.outputs.changed == 'true'
+        if: steps.cpi_diff.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           python src/arima_forecast.py
           python src/model_comparison.py
@@ -49,6 +51,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/cpi_data.csv data/yoy_forecast.csv data/model_comparison.csv data/rolling_backtest.csv data/backtest_errors.csv
+          git add data/*.csv
           git diff --staged --quiet || git commit -m "Auto-update CPI data and refresh forecast/backtest outputs"
           git push
