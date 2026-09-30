@@ -71,8 +71,10 @@
   .side-foot{margin-top:auto; font-size:12px; color:var(--muted); padding:0 10px; display:grid; gap:8px;}
   .side-foot a{display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); text-decoration:none;}
   .side-foot a:hover{color:var(--ink);}
-  .status{display:inline-flex; align-items:center; gap:6px;}
-  .status .dot{width:7px; height:7px; border-radius:50%; background:var(--c-good);}
+  .status{display:grid; gap:2px; line-height:1.4;}
+  .status .row{display:flex; align-items:center; gap:6px;}
+  .status .dot{width:7px; height:7px; border-radius:50%; background:var(--c-good); flex:none;}
+  .status .sub{padding-left:13px;}
 
   .content{min-width:0; padding:40px 44px 64px; max-width:1180px;}
   .page{display:none;}
@@ -285,7 +287,7 @@
       <a class="nav-link" href="#methodology"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h6l3 3v9H4z" stroke-linejoin="round"/><path d="M6.5 8h4M6.5 10.5h4" stroke-linecap="round"/></svg>Methodology</a>
     </nav>
     <div class="side-foot">
-      <span class="status" id="sideStatus"><span class="dot"></span>Loading…</span>
+      <span class="status" id="sideStatus"><span class="row"><span class="dot"></span>Loading…</span></span>
       <a href="https://github.com/ppc1004/ai-inflation-forecast" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Source code</a>
     </div>
   </aside>
@@ -481,7 +483,12 @@
         const i = lastIdx(se.values); if(i<0) return;
         const x = X(i), y = Y(se.values[i]), t = esc((cfg.endFmt||cfg.tipFmt||(v=>v.toFixed(1)))(se.values[i]));
         if(se.endLabel==='right') s += `<text class="end-label" x="${(x+9).toFixed(1)}" y="${(y+4).toFixed(1)}">${t}</text>`;
-        else s += `<text class="end-label" x="${(x-6).toFixed(1)}" y="${(y-11).toFixed(1)}" text-anchor="end">${t}</text>`;
+        else {
+          // put the label on the side away from the recent line, so it never sits on the curve
+          const back = se.values.slice(Math.max(0,i-4), i).filter(v=>v!=null);
+          const below = back.length && Math.max(...back) > se.values[i];
+          s += `<text class="end-label" x="${(x-8).toFixed(1)}" y="${(below ? y+20 : y-11).toFixed(1)}" text-anchor="end">${t}</text>`;
+        }
       });
       // event annotations (history)
       (cfg.events||[]).forEach(ev=>{
@@ -655,7 +662,7 @@
       .filter(r=>r.ref>latest.date && r.date.getTime()>=todayUTC).sort((a,b)=>a.date-b.date)[0];
     const fmtDay = d => MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate();
     const nextText = nextRelease ? (nextRelease.date.getTime()===todayUTC ? 'today, 8:30 a.m. ET' : fmtDay(nextRelease.date)+', '+nextRelease.date.getUTCFullYear()) : null;
-    document.getElementById('sideStatus').innerHTML = `<span class="dot"></span>Data through ${fmtMonth(latest.date)}` + (nextText ? `<br><span style="padding-left:13px">Next release: ${nextText}</span>` : '');
+    document.getElementById('sideStatus').innerHTML = `<span class="row"><span class="dot"></span>Data through ${fmtMonth(latest.date)}</span>` + (nextText ? `<span class="sub">Next CPI release: ${nextText}</span>` : '');
 
     // ---------- forecast & backtest ----------
     const forecast = fcRaw.map(r=>({date:parseDate(r.date), mean:num(r.mean), lo:num(r.mean_ci_lower), hi:num(r.mean_ci_upper)})).filter(r=>r.mean!=null).sort((a,b)=>a.date-b.date);
@@ -978,7 +985,8 @@
       card.innerHTML = `
         <p class="card-title">Average miss by horizon</p>
         <p class="card-sub">${h1.h}-month ahead: ${h1.m.toFixed(2)} pp vs ${h1.nv.toFixed(2)} pp naive. ${hL.h}-month ahead: ${hL.m.toFixed(2)} pp vs ${hL.nv.toFixed(2)} pp naive.
-          Across all horizons the 95% intervals contained the actual value ${avgCov.toFixed(0)}% of the time, so they are ${calib}.</p>
+          Across all horizons the 95% intervals contained the actual value ${avgCov.toFixed(0)}% of the time, so they are ${calib}.
+          This test uses ${hz[0].n} forecast origins, a longer window than the 24-month backtest above, so its 1-month figure differs.</p>
         <div class="legend"><span><i class="key-area" style="background:var(--c-model)"></i>${esc(modelLabel)}</span><span><i class="key-area" style="background:var(--c-ref)"></i>Naive benchmark</span></div>
         <div class="hz-row hz-head"><span>Horizon</span><span>Mean absolute error (pp)</span><span class="hz-cov">In 95% interval</span></div>
         ${pick.map(r=>`<div class="hz-row"><span>${r.h} month${r.h>1?'s':''}</span>
