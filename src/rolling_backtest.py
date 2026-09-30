@@ -18,6 +18,12 @@ OUTPUT_PATH = (
     / "rolling_backtest.csv"
 )
 
+ERRORS_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "backtest_errors.csv"
+)
+
 BACKTEST_MONTHS = 24
 
 CANDIDATE_ORDERS = [
@@ -42,17 +48,43 @@ def calculate_metrics(actual, predicted):
     return mae, rmse
 
 
-def rolling_backtest():
-    data = pd.read_csv(DATA_PATH, parse_dates=["date"])
+def make_error_rows(model_name, dates, actual, predicted):
+    # One row per backtest month, so the website can plot error over time.
+    rows = []
 
+    for date, actual_value, predicted_value in zip(dates, actual, predicted):
+        error = actual_value - predicted_value  # positive = forecast too low
+
+        rows.append(
+            {
+                "date": date.strftime("%Y-%m-%d"),
+                "model": model_name,
+                "actual": actual_value,
+                "forecast": predicted_value,
+                "error": error,
+                "abs_error": abs(error),
+            }
+        )
+
+    return rows
+
+
+def rolling_backtest():
+    data = (
+        pd.read_csv(DATA_PATH, parse_dates=["date"])
+        .set_index("date")
+        .asfreq("MS")  # one row per calendar month; a missing month becomes NaN
+    )
+
+    # BLS did not publish October 2025 CPI (government shutdown).
+    # Fill missing months inside the series by linear interpolation so that
+    # pct_change(12) always compares a month with the same month one year earlier.
+    data["cpi"] = data["cpi"].interpolate(limit_area="inside")
+
+    # Calculate year-over-year inflation
     data["yoy"] = data["cpi"].pct_change(12) * 100
 
-    yoy = (
-        data.dropna(subset=["yoy"])
-        .set_index("date")["yoy"]
-        .asfreq("MS")
-        .dropna()
-    )
+    yoy = data["yoy"].dropna().asfreq("MS")
 
     if len(yoy) <= BACKTEST_MONTHS:
         raise ValueError("Not enough data for rolling backtesting.")
@@ -60,7 +92,10 @@ def rolling_backtest():
     test_start = len(yoy) - BACKTEST_MONTHS
     actual_values = yoy.iloc[test_start:].to_numpy()
 
+    test_dates = yoy.index[test_start:]
+
     results = []
+    error_rows = []
 
     # Naive baseline:
     # Predict that next month's inflation equals this month's inflation.
@@ -79,6 +114,15 @@ def rolling_backtest():
             "mae": naive_mae,
             "rmse": naive_rmse,
         }
+    )
+
+    error_rows.extend(
+        make_error_rows(
+            "Naive baseline",
+            test_dates,
+            actual_values,
+            naive_predictions,
+        )
     )
 
     warnings.filterwarnings("ignore")
@@ -109,6 +153,15 @@ def rolling_backtest():
                 }
             )
 
+            error_rows.extend(
+                make_error_rows(
+                    f"ARIMA{order}",
+                    test_dates,
+                    actual_values,
+                    predictions,
+                )
+            )
+
             print(
                 f"ARIMA{order}: "
                 f"MAE={mae:.3f}, RMSE={rmse:.3f}"
@@ -124,6 +177,9 @@ def rolling_backtest():
     )
 
     results_df.to_csv(OUTPUT_PATH, index=False)
+
+    pd.DataFrame(error_rows).to_csv(ERRORS_PATH, index=False)
+    print(f"Monthly backtest errors saved to {ERRORS_PATH}")
 
     print("\nRolling backtest results:")
     print(results_df)
