@@ -733,7 +733,8 @@
         <h3 class="section-title">Rolling Backtest Results (sorted by RMSE)</h3>
         <div class="subcaption">MAE / RMSE are forecast error metrics — lower means the model was more accurate historically. 'Naive baseline' simply repeats last month's value, used as a reference point.</div>
         <div class="info-box">
-          <b>What this means:</b> Historically, the model's forecasts have been off by about <b>±${bestMae.toFixed(2)} percentage points</b> on average compared to actual inflation.
+          <b>What this means:</b> In the rolling backtest, the lowest mean absolute error (MAE) among the models tested was <b>${bestMae.toFixed(2)} percentage points</b>.
+          In other words, its one-month-ahead forecasts missed actual YoY inflation by about that much on average. (MAE is an average miss, not a confidence interval.)
         </div>
         <div class="table-wrap" style="margin-bottom:1rem;">
           <table>
