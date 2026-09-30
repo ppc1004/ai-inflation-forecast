@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Inflation Forecast</title>
-  <meta name="description" content="A free dashboard tracking U.S. CPI data and forecasting near-term inflation with an ARIMA model, updated daily, with a visible backtest track record.">
+  <meta name="description" content="A free dashboard tracking U.S. CPI data and forecasting near-term inflation with an ARIMA model, refreshed with each monthly CPI release, with a visible backtest track record.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="AI Inflation Forecast">
-  <meta property="og:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, updated daily.">
+  <meta property="og:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, refreshed with each monthly CPI release.">
   <meta property="og:url" content="https://ppc1004.github.io/ai-inflation-forecast/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="AI Inflation Forecast">
-  <meta name="twitter:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, updated daily.">
+  <meta name="twitter:description" content="Tracking U.S. CPI data and forecasting inflation with ARIMA models, refreshed with each monthly CPI release.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%93%88</text></svg>">
 <style>
   :root{
@@ -420,8 +420,31 @@
     }
 
     // ---- transform data ----
-    const data = cpiRaw.map(r=>({date: parseDate(r.date), cpi: num(r.cpi)}));
-    data.sort((a,b)=>a.date-b.date);
+    const rawData = cpiRaw
+      .map(r=>({date: parseDate(r.date), cpi: num(r.cpi)}))
+      .filter(r=>r.cpi!=null && !isNaN(r.cpi))
+      .sort((a,b)=>a.date-b.date);
+
+    // Rebuild a complete monthly series. BLS did not publish October 2025 CPI
+    // (government shutdown), so a missing month is filled by linear
+    // interpolation — the same approach as the Python pipeline.
+    // This guarantees data[i-12] is exactly 12 months before data[i].
+    const data = [];
+    for(let i=0;i<rawData.length;i++){
+      if(i>0){
+        const prev = rawData[i-1], cur = rawData[i];
+        const gap = (cur.date.getUTCFullYear()-prev.date.getUTCFullYear())*12
+                  + (cur.date.getUTCMonth()-prev.date.getUTCMonth());
+        for(let k=1;k<gap;k++){
+          data.push({
+            date: new Date(Date.UTC(prev.date.getUTCFullYear(), prev.date.getUTCMonth()+k, 1)),
+            cpi: prev.cpi + (cur.cpi-prev.cpi)*k/gap,
+            interpolated: true
+          });
+        }
+      }
+      data.push(rawData[i]);
+    }
     for(let i=0;i<data.length;i++){
       data[i].mom = i>0 ? (data[i].cpi-data[i-1].cpi)/data[i-1].cpi*100 : null;
       data[i].yoy = i>=12 ? (data[i].cpi-data[i-12].cpi)/data[i-12].cpi*100 : null;
@@ -470,7 +493,7 @@
           <div class="stat-main">
             <div class="stat-number">${latest.yoy.toFixed(1)}%</div>
             <div class="stat-sub">Annual inflation (YoY) estimate for ${fmtDateLong(latest.date)}</div>
-            <div class="stat-updated">Updated ${fmtDateLong(latest.date)} &nbsp;·&nbsp; CPI data refreshes daily; forecast is re-run periodically</div>
+            <div class="stat-updated">Updated ${fmtDateLong(latest.date)} &nbsp;·&nbsp; Checked daily; forecast and backtests refresh with each monthly CPI release</div>
           </div>
           <div class="stat-side">
             <div class="side-item"><span class="side-label">Latest CPI (index)</span><span class="side-value">${latest.cpi.toFixed(3)}</span></div>
