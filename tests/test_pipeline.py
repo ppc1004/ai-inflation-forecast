@@ -83,5 +83,5 @@ def test_download_extra_keeps_previous_values_on_failure(tmp_path, monkeypatch):
     download_extra.download_extra()
 
     result = pd.read_csv(out)
-    assert result.loc[0, "food"] == 310.0      # kept from the previous file
-    assert result.loc[0, "core"] == 1.0        # refreshed
+    assert result.loc[0, "food"] == 310.0  # kept from the previous file
+    assert result.loc[0, "core"] == 1.0  # refreshed

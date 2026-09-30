@@ -1,9 +1,8 @@
-import pandas as pd
 import pytest
 
 pytest.importorskip("statsmodels")
 
-from horizon_backtest import summarise  # noqa: E402
+from horizon_backtest import summarise
 
 
 def test_summarise_errors_and_coverage():
