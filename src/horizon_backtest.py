@@ -10,8 +10,10 @@ data up to that month, forecasts 12 months ahead, and every forecast whose
 target month has already been published is scored.
 """
 
-from pathlib import Path
+from __future__ import annotations
+
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -19,17 +21,16 @@ from statsmodels.tsa.arima.model import ARIMA
 
 from data_utils import load_yoy
 
-
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 DATA_PATH = DATA_DIR / "cpi_data.csv"
 OUTPUT_PATH = DATA_DIR / "horizon_backtest.csv"
 
-ORDER = (1, 0, 2)      # keep in sync with arima_forecast.py
-HORIZON = 12           # months ahead
-N_ORIGINS = 48         # forecast origins in the evaluation window
+ORDER = (1, 0, 2)  # keep in sync with arima_forecast.py
+HORIZON = 12  # months ahead
+N_ORIGINS = 48  # forecast origins in the evaluation window
 
 
-def score_origin(yoy, position, forecast_df):
+def score_origin(yoy: pd.Series, position: int, forecast_df: pd.DataFrame) -> list[dict]:
     """Compare one origin's forecasts with the actual values that exist."""
     rows = []
     last_observed = yoy.iloc[position - 1]
@@ -57,7 +58,7 @@ def score_origin(yoy, position, forecast_df):
     return rows
 
 
-def summarise(records):
+def summarise(records: list[dict]) -> pd.DataFrame:
     """Aggregate per-forecast records into one row per horizon."""
     df = pd.DataFrame(records)
 
@@ -89,7 +90,7 @@ def summarise(records):
     return summary.reset_index().round(4)
 
 
-def horizon_backtest():
+def horizon_backtest() -> None:
     yoy = load_yoy(DATA_PATH)
 
     if len(yoy) <= N_ORIGINS + 24:

@@ -1,15 +1,16 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from statsmodels.tsa.arima.model import ARIMA
 
 from data_utils import load_yoy
 
-
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "cpi_data.csv"
 OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "yoy_forecast.csv"
 
 
-def run_arima_forecast():
+def run_arima_forecast() -> None:
     yoy = load_yoy(DATA_PATH)
 
     # ARIMA model

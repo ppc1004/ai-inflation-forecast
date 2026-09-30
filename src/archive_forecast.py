@@ -9,11 +9,12 @@ Once new CPI prints arrive, the website compares these archived forecasts
 with what actually happened: a true out-of-sample track record.
 """
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
-
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
@@ -22,7 +23,7 @@ FORECAST_PATH = DATA_DIR / "yoy_forecast.csv"
 ARCHIVE_PATH = DATA_DIR / "forecast_archive.csv"
 
 
-def archive_forecast():
+def archive_forecast() -> None:
     cpi = pd.read_csv(CPI_PATH, parse_dates=["date"])
     vintage = cpi["date"].max()
 
@@ -36,7 +37,7 @@ def archive_forecast():
             "forecast": forecast["mean"].round(4),
             "lower_95": forecast["mean_ci_lower"].round(4),
             "upper_95": forecast["mean_ci_upper"].round(4),
-            "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "created_at": datetime.now(UTC).strftime("%Y-%m-%d"),
         }
     )
 

@@ -4,16 +4,17 @@ This is the image shown when the site link is shared on LinkedIn, Slack,
 LINE, etc. It is regenerated with every data update so the numbers are current.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.pyplot as plt
+import pandas as pd
 
-from data_utils import load_yoy  # noqa: E402
-
+from data_utils import load_yoy
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 CPI_PATH = DATA_DIR / "cpi_data.csv"
@@ -30,7 +31,7 @@ MODEL = "#eb6834"
 FED_TARGET = 2.0
 
 
-def make_share_image():
+def make_share_image() -> None:
     yoy = load_yoy(CPI_PATH)
     forecast = pd.read_csv(FORECAST_PATH, parse_dates=["date"]).set_index("date")
 
@@ -48,16 +49,27 @@ def make_share_image():
     direction = "above" if gap >= 0 else "below"
     fig.text(0.055, 0.465, f"{abs(gap):.1f} points {direction} the Fed's 2% target", fontsize=19, color=INK_2)
     fig.text(
-        0.055, 0.33,
+        0.055,
+        0.33,
         f"Forecast for {next_row.name:%b %Y}: {next_row['mean']:.1f}%",
-        fontsize=21, color=INK, weight="bold",
+        fontsize=21,
+        color=INK,
+        weight="bold",
     )
     fig.text(
-        0.055, 0.275,
+        0.055,
+        0.275,
         f"95% interval {next_row['mean_ci_lower']:.1f}% to {next_row['mean_ci_upper']:.1f}%",
-        fontsize=17, color=INK_2,
+        fontsize=17,
+        color=INK_2,
     )
-    fig.text(0.055, 0.09, "ARIMA model  ·  rolling backtest  ·  updated with every CPI release", fontsize=14, color=MUTED)
+    fig.text(
+        0.055,
+        0.09,
+        "ARIMA model  ·  rolling backtest  ·  updated with every CPI release",
+        fontsize=14,
+        color=MUTED,
+    )
 
     # ---- chart ----
     ax = fig.add_axes([0.55, 0.17, 0.40, 0.66], facecolor=PAGE)
@@ -67,7 +79,9 @@ def make_share_image():
         bridge_x,
         [latest] + list(fc["mean_ci_lower"]),
         [latest] + list(fc["mean_ci_upper"]),
-        color=MODEL, alpha=0.13, linewidth=0,
+        color=MODEL,
+        alpha=0.13,
+        linewidth=0,
     )
     ax.plot(history.index, history.values, color=ACTUAL, linewidth=3, solid_capstyle="round")
     ax.plot(bridge_x, [latest] + list(fc["mean"]), color=MODEL, linewidth=3, linestyle=(0, (4, 3)))

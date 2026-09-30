@@ -1,20 +1,15 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import pandas as pd
 
+FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL"
 
-FRED_CSV_URL = (
-    "https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL"
-)
-
-OUTPUT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "data"
-    / "cpi_data.csv"
-)
+OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "cpi_data.csv"
 
 
-def download_cpi():
+def download_cpi() -> None:
     data = pd.read_csv(FRED_CSV_URL)
 
     data = data.rename(

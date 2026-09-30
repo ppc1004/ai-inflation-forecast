@@ -6,41 +6,38 @@ If a single series fails to download, its previous values are kept so one
 bad request never wipes a chart off the site.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import pandas as pd
 
-
 FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}"
 
-OUTPUT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "data"
-    / "extra_series.csv"
-)
+OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "extra_series.csv"
 
 # column name on the website -> FRED series id
 SERIES = {
     # CPI components (index levels, seasonally adjusted)
-    "core": "CPILFESL",          # all items less food and energy
+    "core": "CPILFESL",  # all items less food and energy
     "food": "CPIUFDSL",
     "energy": "CPIENGSL",
     "shelter": "CUSR0000SAH1",
     # BLS average prices, U.S. city average (dollars)
-    "eggs": "APU0000708111",     # grade A large, per dozen
+    "eggs": "APU0000708111",  # grade A large, per dozen
     "gasoline": "APU000074714",  # unleaded regular, per gallon
-    "milk": "APU0000709112",     # whole, per gallon
-    "coffee": "APU0000717311",   # ground roast, per pound
-    "bread": "APU0000702111",    # white pan, per pound
+    "milk": "APU0000709112",  # whole, per gallon
+    "coffee": "APU0000717311",  # ground roast, per pound
+    "bread": "APU0000702111",  # white pan, per pound
     # wages, policy and expectations
-    "wages": "AHETPI",           # avg hourly earnings, production & nonsupervisory
-    "fed_funds": "FEDFUNDS",     # effective federal funds rate, %
+    "wages": "AHETPI",  # avg hourly earnings, production & nonsupervisory
+    "fed_funds": "FEDFUNDS",  # effective federal funds rate, %
     "exp_consumers_1y": "MICH",  # U. Michigan expected inflation, next 12 months, %
     "exp_market_10y": "T10YIE",  # 10-year breakeven inflation rate, %
 }
 
 
-def fetch_series(series_id):
+def fetch_series(series_id: str) -> pd.Series:
     data = pd.read_csv(FRED_CSV_URL.format(series_id))
     data.columns = ["date", "value"]
     data["date"] = pd.to_datetime(data["date"])
@@ -52,7 +49,7 @@ def fetch_series(series_id):
     return series.resample("MS").mean()
 
 
-def download_extra():
+def download_extra() -> None:
     previous = None
     if OUTPUT_PATH.exists():
         previous = pd.read_csv(OUTPUT_PATH, parse_dates=["date"]).set_index("date")

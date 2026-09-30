@@ -1,5 +1,8 @@
-from pathlib import Path
+from __future__ import annotations
+
 import warnings
+from collections.abc import Sequence
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -7,24 +10,11 @@ from statsmodels.tsa.arima.model import ARIMA
 
 from data_utils import load_yoy
 
+DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "cpi_data.csv"
 
-DATA_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "data"
-    / "cpi_data.csv"
-)
+OUTPUT_PATH = Path(__file__).resolve().parents[1] / "data" / "rolling_backtest.csv"
 
-OUTPUT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "data"
-    / "rolling_backtest.csv"
-)
-
-ERRORS_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "data"
-    / "backtest_errors.csv"
-)
+ERRORS_PATH = Path(__file__).resolve().parents[1] / "data" / "backtest_errors.csv"
 
 BACKTEST_MONTHS = 24
 
@@ -41,7 +31,7 @@ CANDIDATE_ORDERS = [
 ]
 
 
-def calculate_metrics(actual, predicted):
+def calculate_metrics(actual: Sequence[float], predicted: Sequence[float]) -> tuple[float, float]:
     error = np.array(actual) - np.array(predicted)
 
     mae = np.mean(np.abs(error))
@@ -50,11 +40,16 @@ def calculate_metrics(actual, predicted):
     return mae, rmse
 
 
-def make_error_rows(model_name, dates, actual, predicted):
+def make_error_rows(
+    model_name: str,
+    dates: pd.DatetimeIndex,
+    actual: Sequence[float],
+    predicted: Sequence[float],
+) -> list[dict]:
     # One row per backtest month, so the website can plot error over time.
     rows = []
 
-    for date, actual_value, predicted_value in zip(dates, actual, predicted):
+    for date, actual_value, predicted_value in zip(dates, actual, predicted, strict=True):
         error = actual_value - predicted_value  # positive = forecast too low
 
         rows.append(
@@ -71,7 +66,7 @@ def make_error_rows(model_name, dates, actual, predicted):
     return rows
 
 
-def rolling_backtest():
+def rolling_backtest() -> None:
     yoy = load_yoy(DATA_PATH)
 
     if len(yoy) <= BACKTEST_MONTHS:
@@ -87,9 +82,7 @@ def rolling_backtest():
 
     # Naive baseline:
     # Predict that next month's inflation equals this month's inflation.
-    naive_predictions = yoy.iloc[
-        test_start - 1 : len(yoy) - 1
-    ].to_numpy()
+    naive_predictions = yoy.iloc[test_start - 1 : len(yoy) - 1].to_numpy()
 
     naive_mae, naive_rmse = calculate_metrics(
         actual_values,
@@ -150,19 +143,12 @@ def rolling_backtest():
                 )
             )
 
-            print(
-                f"ARIMA{order}: "
-                f"MAE={mae:.3f}, RMSE={rmse:.3f}"
-            )
+            print(f"ARIMA{order}: MAE={mae:.3f}, RMSE={rmse:.3f}")
 
         except Exception as error:
             print(f"ARIMA{order} failed: {error}")
 
-    results_df = (
-        pd.DataFrame(results)
-        .sort_values("rmse")
-        .reset_index(drop=True)
-    )
+    results_df = pd.DataFrame(results).sort_values("rmse").reset_index(drop=True)
 
     results_df.to_csv(OUTPUT_PATH, index=False)
 
