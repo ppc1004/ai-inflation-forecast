@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
+from data_utils import load_yoy
+
 
 DATA_PATH = (
     Path(__file__).resolve().parents[1]
@@ -70,21 +72,7 @@ def make_error_rows(model_name, dates, actual, predicted):
 
 
 def rolling_backtest():
-    data = (
-        pd.read_csv(DATA_PATH, parse_dates=["date"])
-        .set_index("date")
-        .asfreq("MS")  # one row per calendar month; a missing month becomes NaN
-    )
-
-    # BLS did not publish October 2025 CPI (government shutdown).
-    # Fill missing months inside the series by linear interpolation so that
-    # pct_change(12) always compares a month with the same month one year earlier.
-    data["cpi"] = data["cpi"].interpolate(limit_area="inside")
-
-    # Calculate year-over-year inflation
-    data["yoy"] = data["cpi"].pct_change(12) * 100
-
-    yoy = data["yoy"].dropna().asfreq("MS")
+    yoy = load_yoy(DATA_PATH)
 
     if len(yoy) <= BACKTEST_MONTHS:
         raise ValueError("Not enough data for rolling backtesting.")
