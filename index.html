@@ -734,7 +734,7 @@
             <div class="kpi-sub">${Math.abs(yoyChange)<0.05 ? 'Unchanged vs '+fmtMonth(prev.date) : `<span class="${yoyChange>0?'up-bad':'down-good'}">${pp(yoyChange)}</span> vs ${fmtMonth(prev.date)}`}</div></div>
           <div class="kpi"><div class="kpi-label">Monthly change (MoM)</div><div class="kpi-value num">${pct(latest.mom)}</div><div class="kpi-sub">${fmtMonth(latest.date)} vs ${fmtMonth(prev.date)}</div></div>
           <div class="kpi"><div class="kpi-label">Forecast, ${fmtMonth(next.date)}</div><div class="kpi-value num">${pct(next.mean)}</div><div class="kpi-sub">95% interval ${pct(next.lo)} – ${pct(next.hi)}</div></div>
-          <div class="kpi"><div class="kpi-label">${maeGain!=null && maeGain<0 ? 'Higher error than naive' : 'Lower error than naive'}</div><div class="kpi-value num">${maeGain!=null ? Math.abs(maeGain).toFixed(0)+'%' : '—'}</div><div class="kpi-sub">Backtest MAE ${model?model.mae.toFixed(2):'—'} vs ${naive?naive.mae.toFixed(2):'—'} pp</div></div>
+          <div class="kpi"><div class="kpi-label">${maeGain!=null && maeGain<0 ? 'Higher error than naive' : 'Lower error than naive'}</div><div class="kpi-value num">${maeGain!=null ? Math.abs(maeGain).toFixed(0)+'%' : '—'}</div><div class="kpi-sub">MAE ${model?model.mae.toFixed(2):'—'} vs ${naive?naive.mae.toFixed(2):'—'} pp, last ${hasErrors?errModel.length:24} months · <a class="link-more" href="#findings">is it significant?</a></div></div>
         </div>
         <div class="card" style="margin-top:12px">
           <div class="card-head">
@@ -1048,10 +1048,12 @@
         const beats = best.mae < A.mae;
         const rel = m => ((m.mae/A.mae-1)*100);
         const sigB = best.pA!=null && best.pA<0.05;
-        items.push({title: beats && sigB ? `${esc(best.label)} beats the simple model` : beats ? `${esc(best.label)} edges out ARIMA, but not by a meaningful margin` : 'More data and machine learning did not beat the simple model',
+        const parts = challengers.map(m=>`${m.model==='arimax'?'adding last month\'s energy and core inflation (ARIMAX)':'gradient-boosted trees'} ${rel(m)<0?'cut':'raised'} ARIMA's average error by ${Math.abs(rel(m)).toFixed(1)}%`);
+        items.push({title: beats && sigB ? `${esc(best.label)} beats the simple model` : beats ? `${esc(best.label)} looks more accurate, but the gap could still be luck` : 'More data and machine learning did not beat the simple model',
           stat: challengers.map(m=>`${esc(m.label)}: ${spct(rel(m))} vs ARIMA (p = ${fmtP(m.pA)})`).join(' · '),
-          text: `Adding last month's energy and core inflation, or switching to gradient-boosted trees, ${beats ? `changed the average error by ${spct(rel(best))} for the best challenger` : 'did not lower the average error'}.
-            ${best.pA!=null ? `Against ARIMA that difference is ${sigWord(best.pA)} (p = ${fmtP(best.pA)}).` : ''} With only a few hundred monthly observations and one dominant signal, extra complexity has little room to help.`,
+          text: `Over the same ${A.n} months, ${parts.join(', while ')}.
+            ${best.pA!=null ? `For the best challenger the Diebold-Mariano test against ARIMA gives p = ${fmtP(best.pA)}: ${sigWord(best.pA)}.` : ''}
+            ${beats && !sigB ? 'With this few test months a gap of that size can still arise by chance; a longer evaluation window would be needed to confirm it.' : beats ? 'The richer model is a candidate to replace ARIMA as the production forecast.' : 'Most of the predictable signal is already captured by recent inflation itself.'}`,
           link:'#track-record'});
       }
       // 3. horizon
@@ -1078,7 +1080,7 @@
         const others = same.length ? ` The other models missed that month too: ${esc(same.join(', '))}.` : '';
         items.push({title:'Turning points are the weak spot',
           stat:`Largest miss: ${pp(worst.err,2)} in ${fmtMonth(worst.date)}`,
-          text:`The biggest error came in ${fmtMonthLong(worst.date)}, when inflation ${jump!=null ? (jump>0?'jumped':'fell')+' '+Math.abs(jump).toFixed(2)+' points in a single month' : 'moved sharply'}. A model that only sees past inflation cannot anticipate shocks such as energy price spikes; it reacts a month late.${others}`,
+          text:`The biggest error came in ${fmtMonthLong(worst.date)}, when inflation ${jump!=null ? (jump>0?'jumped':'fell')+' '+Math.abs(jump).toFixed(2)+' points in a single month' : 'moved sharply'}. A model that only sees past inflation cannot anticipate sudden shifts such as energy price swings; it reacts a month late.${others}`,
           link:'#track-record'});
       }
       // 6. data quality
