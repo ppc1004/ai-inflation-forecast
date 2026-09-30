@@ -76,7 +76,7 @@
   .status .dot{width:7px; height:7px; border-radius:50%; background:var(--c-good); flex:none;}
   .status .sub{padding-left:13px;}
 
-  .content{min-width:0; padding:40px 44px 64px; max-width:1180px;}
+  .content{min-width:0; width:100%; max-width:2200px; padding:40px clamp(20px, 3vw, 56px) 64px;}
   .page{display:none;}
   .page.active{display:block; animation:fade .18s ease;}
   @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
@@ -949,7 +949,8 @@
     `;
 
     // =============== page renderers (charts drawn when a page becomes visible) ===============
-    const H = (desk, mob) => W => W < 520 ? mob : desk;
+    // chart height grows with width on large screens so wide charts don't look flat
+    const H = (desk, mob) => W => W < 520 ? mob : Math.round(Math.min(desk*1.35, Math.max(desk, W*0.28)));
     const padN = n => Array(n).fill(null);
 
     // ---- overview chart ----
