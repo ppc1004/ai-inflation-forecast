@@ -8,13 +8,13 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="U.S. Inflation Forecast">
 <meta property="og:description" content="U.S. CPI inflation tracker and 12-month ARIMA forecast with a transparent backtest track record.">
-<meta property="og:url" content="https://ppc1004.github.io/ai-inflation-forecast/">
-<meta property="og:image" content="https://ppc1004.github.io/ai-inflation-forecast/data/social_preview.png">
+<meta property="og:url" content="https://ppc1004.github.io/us-inflation-forecast/">
+<meta property="og:image" content="https://ppc1004.github.io/us-inflation-forecast/data/social_preview.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Latest U.S. CPI inflation and the 12-month forecast">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://ppc1004.github.io/ai-inflation-forecast/data/social_preview.png">
+<meta name="twitter:image" content="https://ppc1004.github.io/us-inflation-forecast/data/social_preview.png">
 <meta name="twitter:title" content="U.S. Inflation Forecast">
 <meta name="twitter:description" content="U.S. CPI inflation tracker and 12-month ARIMA forecast with a transparent backtest track record.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%232a78d6%22/><path d=%22M6 22 L12 15 L17 18 L26 8%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
@@ -173,6 +173,17 @@
   .hb-v{text-align:right; font-variant-numeric:tabular-nums;}
   .tag{font-size:10.5px; font-weight:600; letter-spacing:.02em; padding:1px 6px; border-radius:5px; margin-left:6px; vertical-align:1px; border:1px solid var(--border); color:var(--ink-2);}
 
+  /* ---------- findings ---------- */
+  .finding{display:grid; grid-template-columns:44px 1fr; gap:14px; align-items:start;}
+  .finding .n{width:32px; height:32px; border-radius:9px; background:var(--page); border:1px solid var(--border); display:grid; place-items:center; font-weight:650; font-size:14px; color:var(--ink-2);}
+  .finding h3{font-size:16.5px; font-weight:650; letter-spacing:-.01em; margin:4px 0 6px;}
+  .finding p{margin:0; color:var(--ink-2); font-size:14.5px;}
+  .finding .stat{display:inline-block; font-size:13px; font-weight:600; color:var(--ink); background:var(--page); border:1px solid var(--border); border-radius:7px; padding:2px 8px; margin-top:10px;}
+  .finding .more{display:inline-block; margin-top:10px; margin-left:8px;}
+  .bm-table td.model{font-weight:500;} .bm-table tr.em td{background:color-mix(in srgb, var(--c-model) 7%, transparent);}
+  .bm-bar{display:inline-block; height:8px; border-radius:0 4px 4px 0; background:var(--grid); vertical-align:middle; margin-right:8px;}
+  .bm-bar.c-model{background:var(--c-model);} .bm-bar.c-ref{background:var(--c-ref);}
+
   /* ---------- horizon accuracy ---------- */
   .hz-row{display:grid; grid-template-columns:78px 1fr 96px; gap:14px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;}
   .hz-row:last-child{border-bottom:0;}
@@ -267,6 +278,7 @@
     <nav class="nav-group" aria-label="Forecast">
       <div class="nav-label">Forecast</div>
       <a class="nav-link" href="#overview"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Overview</a>
+      <a class="nav-link" href="#findings"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.8a4.2 4.2 0 0 0-2.6 7.5c.5.4.8 1 .8 1.6v.6h3.6v-.6c0-.6.3-1.2.8-1.6A4.2 4.2 0 0 0 8 1.8z" stroke-linejoin="round"/><path d="M6.3 13.5h3.4" stroke-linecap="round"/></svg>Key findings</a>
       <a class="nav-link" href="#forecast"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12 L6 8 L9 10 L14 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 4h4v4" stroke-linecap="round" stroke-linejoin="round"/></svg>Forecast</a>
       <a class="nav-link" href="#track-record"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Track record</a>
     </nav>
@@ -288,7 +300,7 @@
     </nav>
     <div class="side-foot">
       <span class="status" id="sideStatus"><span class="row"><span class="dot"></span>Loading…</span></span>
-      <a href="https://github.com/ppc1004/ai-inflation-forecast" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Source code</a>
+      <a href="https://github.com/ppc1004/us-inflation-forecast" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Source code</a>
     </div>
   </aside>
 
@@ -628,9 +640,9 @@
   // ================= app =================
   async function main(){
     const app = document.getElementById('app');
-    let cpiRaw, fcRaw, btRaw, errRaw, xRaw, arRaw, hzRaw, schRaw;
+    let cpiRaw, fcRaw, btRaw, errRaw, xRaw, arRaw, hzRaw, schRaw, bmRaw, bmErrRaw;
     try{
-      [cpiRaw, fcRaw, btRaw, errRaw, xRaw, arRaw, hzRaw, schRaw] = await Promise.all([
+      [cpiRaw, fcRaw, btRaw, errRaw, xRaw, arRaw, hzRaw, schRaw, bmRaw, bmErrRaw] = await Promise.all([
         loadCSV('data/cpi_data.csv'),
         loadCSV('data/yoy_forecast.csv'),
         loadCSV('data/rolling_backtest.csv'),
@@ -639,6 +651,8 @@
         loadCSV('data/forecast_archive.csv', true),
         loadCSV('data/horizon_backtest.csv', true),
         loadCSV('data/cpi_release_schedule.csv', true),
+        loadCSV('data/model_benchmark.csv', true),
+        loadCSV('data/model_benchmark_errors.csv', true),
       ]);
     }catch(err){
       app.innerHTML = `<div class="error">Could not load data files — ${esc(err.message)}.<br>This page must be served over HTTP (e.g. GitHub Pages or <code>python -m http.server</code>).</div>`;
@@ -714,7 +728,7 @@
         <div class="eyebrow"><span class="pill"><span class="dot"></span>Data through ${fmtMonthLong(latest.date)}</span>${nextText?`<span class="pill">Next CPI release: ${nextText}</span>`:''}<span>CPI-U, all items, seasonally adjusted</span></div>
         <h1>U.S. inflation is running at ${pct(latest.yoy)}, ${Math.abs(gap)<0.05 ? "right at the Fed's 2% target" : Math.abs(gap).toFixed(1)+" points "+(gap>0?"above":"below")+" the Fed's 2% target"}.</h1>
         <p class="lede">A statistical model (<b>${esc(modelLabel)}</b>) projects year-over-year CPI inflation of <b>${pct(next.mean)}</b> for ${fmtMonthLong(next.date)},
-          with a 95% interval of ${pct(next.lo)} to ${pct(next.hi)}. Every forecast is checked against a naive benchmark in a rolling backtest.</p>
+          with a 95% interval of ${pct(next.lo)} to ${pct(next.hi)}. Every forecast is checked against a naive benchmark in a rolling backtest. <a class="link-more" href="#findings">Read the key findings →</a></p>
         <div class="grid-4">
           <div class="kpi hero"><div class="kpi-label">Annual inflation (YoY)</div><div class="kpi-value num">${pct(latest.yoy)}</div>
             <div class="kpi-sub">${Math.abs(yoyChange)<0.05 ? 'Unchanged vs '+fmtMonth(prev.date) : `<span class="${yoyChange>0?'up-bad':'down-good'}">${pp(yoyChange)}</span> vs ${fmtMonth(prev.date)}`}</div></div>
@@ -743,6 +757,21 @@
             <p class="card-sub" style="margin:12px 0 0">The naive benchmark assumes next month's inflation equals this month's.</p>
           </div>
         </div>
+        ${pageFoot()}
+      </section>
+
+      <!-- ================= FINDINGS ================= -->
+      <section class="page" id="page-findings" data-title="Key findings">
+        <h1 class="page-title">Key findings</h1>
+        <p class="lede">What four years of out-of-sample testing says about forecasting U.S. inflation. Every number on this page is recomputed automatically when new CPI data arrives.</p>
+        <div class="stack" id="findingsBody"></div>
+        <h2>What I would try next</h2>
+        <div class="card"><ul class="card-sub" style="padding-left:18px; margin:0; display:grid; gap:6px">
+          <li>Forecast core, food, energy and shelter separately and aggregate with CPI weights, so each part gets a model suited to its behaviour.</li>
+          <li>Add leading indicators with a real publication lead, such as import prices, producer prices and wage settlements.</li>
+          <li>Benchmark against professional forecasts (Survey of Professional Forecasters, Cleveland Fed nowcast), not only against naive.</li>
+          <li>Score the full forecast distribution (CRPS, log score) rather than the point forecast alone.</li>
+        </ul></div>
         ${pageFoot()}
       </section>
 
@@ -793,6 +822,9 @@
           <p class="card-sub">Mean absolute error (MAE) of one-month-ahead forecasts, lower is better. RMSE penalises large misses more heavily.</p>
           <div id="leaderboard"></div>
         </div>
+        <h2>Model competition</h2>
+        <p class="sec-sub">Four models forecast the same months, one month ahead, each re-fit only on data available at the time. The Diebold-Mariano test asks whether each model's advantage over the naive benchmark is larger than chance.</p>
+        <div class="card" id="benchCard"></div>
         <h2>Accuracy by forecast horizon</h2>
         <p class="sec-sub">The same test, repeated for forecasts 1 to 12 months ahead, plus a calibration check: how often the actual value landed inside the model's 95% interval.</p>
         <div class="card" id="horizonCard"></div>
@@ -887,17 +919,19 @@
         <div class="grid-2 method">
           <div class="card"><h3>Data</h3><p>Monthly CPI for All Urban Consumers (CPI-U, all items, seasonally adjusted; FRED <code>CPIAUCSL</code>). Inflation is the 12-month percent change of the index.
             BLS did not publish October 2025 CPI because of the federal government shutdown; that month is filled by linear interpolation so every year-over-year rate compares the same calendar month a year apart.</p></div>
-          <div class="card"><h3>Model</h3><p>An ${esc(modelLabel)} model is fit to the full year-over-year inflation series and projects 12 months ahead with 95% confidence intervals.
-            The order was selected by comparing nine candidate ARIMA specifications on out-of-sample error rather than in-sample fit.</p></div>
+          <div class="card"><h3>Models</h3><p>The published forecast comes from an ${esc(modelLabel)} model fit to the full year-over-year inflation series, projecting 12 months ahead with 95% confidence intervals.
+            Its order was selected by comparing nine candidate ARIMA specifications on out-of-sample error rather than in-sample fit.
+            It is benchmarked against a naive "no change" forecast, an ARIMAX model that adds last month's energy and core inflation, and a gradient-boosted tree model (scikit-learn) using lags of headline, core, energy and monthly CPI.</p></div>
           <div class="card"><h3>Evaluation</h3><ul>
             <li>Rolling-origin backtest over the last 24 months, expanding training window, one-step-ahead forecasts.</li>
             <li>MAE and RMSE in percentage points, against a naive "no change" benchmark.</li>
             <li>Per-month errors are published so accuracy can be checked for stability, not just on average.</li>
             <li>A second backtest scores 1- to 12-month-ahead forecasts and checks whether the 95% intervals really cover 95% of outcomes.</li>
+            <li>Model differences are tested with the Diebold-Mariano test (squared-error loss, Harvey-Leybourne-Newbold small-sample correction).</li>
             <li>Every live forecast is archived and scored when the actual CPI print arrives.</li></ul></div>
           <div class="card"><h3>Pipeline &amp; limitations</h3>
             <p>A GitHub Actions job checks FRED daily and re-runs the models when a new CPI release lands.</p>
-            <div class="pipeline"><span class="step">FRED</span><span class="arrow">→</span><span class="step">Python · pandas · statsmodels</span><span class="arrow">→</span><span class="step">CSV</span><span class="arrow">→</span><span class="step">This site</span></div>
+            <div class="pipeline"><span class="step">FRED</span><span class="arrow">→</span><span class="step">Python · pandas · statsmodels · scikit-learn</span><span class="arrow">→</span><span class="step">CSV</span><span class="arrow">→</span><span class="step">This site</span></div>
             <p style="margin-top:10px">Univariate ARIMA uses only past inflation. It does not see energy prices, wages or policy, and tends to lag turning points.</p></div>
         </div>
         <h2>Data sources</h2>
@@ -971,6 +1005,94 @@
           <span class="hb-track"><span class="hb-bar pos ${isM?'c-model':isN?'c-ref':''}" style="left:0;width:${(r.mae/maxMae*100).toFixed(1)}%"></span></span>
           <span class="hb-v">${r.mae.toFixed(3)}</span><span class="hb-v hb-rmse">${r.rmse.toFixed(3)}</span></div>`;
       }).join('') + `</div>`;
+
+    // ---- model competition + findings ----
+    const bm = bmRaw.map(r=>({model:r.model, label:r.label, n:+r.n, mae:num(r.mae), rmse:num(r.rmse), vs:num(r.mae_vs_naive_pct), p:num(r.dm_pvalue), pA:num(r.dm_pvalue_vs_arima)})).filter(r=>r.mae!=null);
+    const bmBy = Object.fromEntries(bm.map(r=>[r.model, r]));
+    const fmtP = p => p==null ? '—' : p < 0.001 ? '< 0.001' : p.toFixed(3);
+    const sigWord = p => p==null ? '' : p < 0.05 ? 'statistically significant at the 5% level' : p < 0.10 ? 'only weakly significant (10% level)' : 'not statistically significant';
+    (function(){
+      const card = document.getElementById('benchCard');
+      if(!bm.length){ card.innerHTML = pending('The model competition'); return; }
+      const maxM = Math.max(...bm.map(r=>r.mae));
+      const rows = bm.slice().sort((a,b)=>a.mae-b.mae);
+      card.innerHTML = `<p class="card-title">One-month-ahead accuracy, last ${bm[0].n} months</p>
+        <p class="card-sub">Lower is better. p-values below 0.05 mean the difference from naive is unlikely to be luck.</p>
+        <div style="overflow-x:auto"><table class="bm-table"><thead><tr><th>Model</th><th>MAE (pp)</th><th class="r">RMSE</th><th class="r">vs naive</th><th class="r">p-value</th></tr></thead><tbody>
+        ${rows.map(r=>`<tr class="${r.model==='arima'?'em':''}"><td class="model">${esc(r.label)}${r.model==='arima'?'<span class="tag">in use</span>':''}</td>
+          <td><span class="bm-bar ${r.model==='arima'?'c-model':r.model==='naive'?'c-ref':''}" style="width:${(r.mae/maxM*110).toFixed(0)}px"></span>${r.mae.toFixed(3)}</td>
+          <td class="r">${r.rmse.toFixed(3)}</td><td class="r">${r.model==='naive'?'—':spct(r.vs)}</td><td class="r">${r.model==='naive'?'—':fmtP(r.p)}</td></tr>`).join('')}
+        </tbody></table></div>`;
+    })();
+
+    (function(){
+      const body = document.getElementById('findingsBody');
+      const items = [];
+      const A = bmBy.arima, N = bmBy.naive;
+      // 1. beating naive
+      if(A && N){
+        const better = A.mae < N.mae;
+        const sigA = A.p!=null && A.p<0.05;
+        items.push({title: better && sigA ? `The model beats a "no change" forecast, but the margin is thin` : better ? `The model looks better than "no change", but not by more than luck` : `A "no change" forecast is hard to beat`,
+          stat: `${esc(A.label)}: ${spct(A.vs)} error vs naive · p = ${fmtP(A.p)}`,
+          text: `Over the last ${A.n} months, ${esc(A.label)} missed actual inflation by ${A.mae.toFixed(2)} points on average, against ${N.mae.toFixed(2)} for simply repeating last month's rate.
+            The Diebold-Mariano test puts the difference at p = ${fmtP(A.p)}: ${sigWord(A.p)}. Month-to-month inflation is highly persistent, so most of the information is already in the latest print.`,
+          link:'#track-record'});
+      }
+      // 2. more data / ML
+      const X = bmBy.arimax, G = bmBy.gbm;
+      if(A && (X || G)){
+        const challengers = [X, G].filter(Boolean);
+        const best = challengers.slice().sort((a,b)=>a.mae-b.mae)[0];
+        const beats = best.mae < A.mae;
+        const rel = m => ((m.mae/A.mae-1)*100);
+        const sigB = best.pA!=null && best.pA<0.05;
+        items.push({title: beats && sigB ? `${esc(best.label)} beats the simple model` : beats ? `${esc(best.label)} edges out ARIMA, but not by a meaningful margin` : 'More data and machine learning did not beat the simple model',
+          stat: challengers.map(m=>`${esc(m.label)}: ${spct(rel(m))} vs ARIMA (p = ${fmtP(m.pA)})`).join(' · '),
+          text: `Adding last month's energy and core inflation, or switching to gradient-boosted trees, ${beats ? `changed the average error by ${spct(rel(best))} for the best challenger` : 'did not lower the average error'}.
+            ${best.pA!=null ? `Against ARIMA that difference is ${sigWord(best.pA)} (p = ${fmtP(best.pA)}).` : ''} With only a few hundred monthly observations and one dominant signal, extra complexity has little room to help.`,
+          link:'#track-record'});
+      }
+      // 3. horizon
+      const hz = hzRaw.map(r=>({h:+r.horizon, m:num(r.model_mae), nv:num(r.naive_mae), cov:num(r.coverage_95), n:+r.n})).filter(r=>r.m!=null).sort((a,b)=>a.h-b.h);
+      if(hz.length){
+        const f=hz[0], l=hz[hz.length-1], g = r => (1-r.m/r.nv)*100;
+        items.push({title: g(l) > g(f) ? 'The model earns its keep at longer horizons' : 'The advantage does not grow with the horizon',
+          stat: `${f.h}-month: ${g(f).toFixed(0)}% better than naive · ${l.h}-month: ${g(l).toFixed(0)}% better`,
+          text: `One month ahead, the model's edge over naive is ${g(f).toFixed(0)}%. Twelve months ahead it is ${g(l).toFixed(0)}% (${l.m.toFixed(2)} vs ${l.nv.toFixed(2)} points), because the model pulls forecasts back toward the long-run average while "no change" keeps extrapolating today's rate.`,
+          link:'#track-record'});
+        const avgCov = hz.reduce((s,r)=>s+r.cov*r.n,0)/hz.reduce((s,r)=>s+r.n,0);
+        items.push({title: Math.abs(avgCov-95) <= 4 ? 'The uncertainty bands are honest' : avgCov < 95 ? 'The uncertainty bands are too narrow' : 'The uncertainty bands are conservative',
+          stat: `${avgCov.toFixed(0)}% of outcomes inside the 95% interval`,
+          text: `Across all horizons, the actual inflation rate landed inside the model's 95% interval ${avgCov.toFixed(0)}% of the time. A forecast that states its uncertainty correctly is often more useful than a slightly sharper point estimate.`,
+          link:'#forecast'});
+      }
+      // 5. turning points
+      const eA = bmErrRaw.filter(r=>r.model==='arima').map(r=>({date:parseDate(r.date), err:num(r.error), actual:num(r.actual)}));
+      if(eA.length){
+        const worst = eA.reduce((a,b)=>Math.abs(b.err)>Math.abs(a.err)?b:a);
+        const prevD = cpiAt.get(addMonths(worst.date,-1).getTime());
+        const jump = prevD ? worst.actual - prevD.yoy : null;
+        const same = bmErrRaw.filter(r=>r.date===isoDate(worst.date) && r.model!=='arima').map(r=>`${(bmBy[r.model]||{label:r.model}).label} ${pp(num(r.error),2)}`);
+        const others = same.length ? ` The other models missed that month too: ${esc(same.join(', '))}.` : '';
+        items.push({title:'Turning points are the weak spot',
+          stat:`Largest miss: ${pp(worst.err,2)} in ${fmtMonth(worst.date)}`,
+          text:`The biggest error came in ${fmtMonthLong(worst.date)}, when inflation ${jump!=null ? (jump>0?'jumped':'fell')+' '+Math.abs(jump).toFixed(2)+' points in a single month' : 'moved sharply'}. A model that only sees past inflation cannot anticipate shocks such as energy price spikes; it reacts a month late.${others}`,
+          link:'#track-record'});
+      }
+      // 6. data quality
+      const rawRows = cpiRaw.map(r=>({date:parseDate(r.date), cpi:num(r.cpi)})).filter(r=>r.cpi!=null).sort((a,b)=>a.date-b.date);
+      let maxDiff = 0, diffAt = null;
+      rawRows.forEach((r,i)=>{ if(i<12) return; const naiveYoY=(r.cpi/rawRows[i-12].cpi-1)*100; const d=cpiAt.get(r.date.getTime()); if(d && d.yoy!=null){ const diff=Math.abs(naiveYoY-d.yoy); if(diff>maxDiff){ maxDiff=diff; diffAt=r.date; } } });
+      if(maxDiff > 0.05){
+        items.push({title:'One missing month would have distorted a year of data',
+          stat:`Up to ${maxDiff.toFixed(2)} points of error avoided`,
+          text:`BLS never published October 2025 CPI because of the government shutdown. Computing year-over-year inflation by counting back twelve rows, a common shortcut, would silently compare against the wrong month for the following year, overstating inflation by as much as ${maxDiff.toFixed(2)} points (${fmtMonth(diffAt)}). The pipeline rebuilds a complete monthly calendar and interpolates the gap instead.`,
+          link:'#methodology'});
+      }
+      body.innerHTML = items.length ? items.map((it,i)=>`<div class="card finding"><span class="n">${i+1}</span><div><h3>${it.title}</h3><p>${it.text}</p>
+          <span class="stat">${it.stat}</span>${it.link?`<a class="link-more more" href="${it.link}">See the data →</a>`:''}</div></div>`).join('') : pending('Findings');
+    })();
 
     // accuracy by horizon
     (function(){
@@ -1270,7 +1392,7 @@
     })();
 
     // =============== router ===============
-    const PAGES = ['overview','forecast','track-record','drivers','prices','history','money','expectations','fed','methodology'];
+    const PAGES = ['overview','findings','forecast','track-record','drivers','prices','history','money','expectations','fed','methodology'];
     function show(){
       let id = (location.hash||'').slice(1);
       if(!PAGES.includes(id)) id = 'overview';
