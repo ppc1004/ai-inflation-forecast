@@ -232,8 +232,14 @@
 
   // ---------- Chart rendering (dependency-free inline SVG) ----------
   function niceTicks(min,max,count){
-    const arr=[];
-    for(let i=0;i<=count;i++) arr.push(min + (max-min)*i/count);
+    // Round tick values (e.g. 2.0, 2.5, 3.0 or 250, 260, 270) that fully cover [min, max].
+    const span = (max - min) || 1;
+    const raw = span / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+    const start = Math.floor(min / step) * step;
+    const arr = [];
+    for (let i = 0; start + i * step < max + step - 1e-9; i++) arr.push(+(start + i * step).toFixed(10));
     return arr;
   }
 
@@ -263,15 +269,16 @@
     if(allVals.length===0) allVals=[0,1];
     let yMin=Math.min(...allVals), yMax=Math.max(...allVals);
     if(yMin===yMax){ yMin-=1; yMax+=1; }
-    const pad=(yMax-yMin)*0.12;
-    yMin-=pad; yMax+=pad;
+    // Axis spans exactly from the first to the last nice tick.
+    const yTicks = niceTicks(yMin, yMax, 4);
+    yMin = yTicks[0]; yMax = yTicks[yTicks.length-1];
     const Y = v => marginT + plotH - ((v-yMin)/(yMax-yMin))*plotH;
 
     let svg = '';
 
     // gridlines
     if(showAxis){
-      const ticks = niceTicks(yMin+pad, yMax-pad, 4);
+      const ticks = yTicks;
       ticks.forEach(t=>{
         const y = Y(t);
         svg += `<line x1="${marginL}" y1="${y.toFixed(1)}" x2="${W-marginR}" y2="${y.toFixed(1)}" stroke="#eef2f7" stroke-width="1"/>`;
@@ -367,11 +374,11 @@
     const barW = Math.min(46, bandW*0.6);
     let yMin=0, yMax=Math.max(...values);
     if(yMax<=0) yMax=1;
-    const pad=yMax*0.12; yMax+=pad;
+    const yTicks=niceTicks(0,yMax,4); yMax=yTicks[yTicks.length-1];
     const Y = v => marginT + plotH - ((v-yMin)/(yMax-yMin))*plotH;
 
     let svg='';
-    const ticks=niceTicks(0,yMax-pad,4);
+    const ticks=yTicks;
     ticks.forEach(t=>{
       const y=Y(t);
       svg += `<line x1="${marginL}" y1="${y.toFixed(1)}" x2="${W-marginR}" y2="${y.toFixed(1)}" stroke="#eef2f7" stroke-width="1"/>`;
@@ -532,7 +539,7 @@
     const historySlider = document.getElementById('historySlider');
     const forecastSlider = document.getElementById('forecastSlider');
     historySlider.min = 12; historySlider.max = data.length; historySlider.step = 6;
-    historySlider.value = Math.min(60, data.length);
+    historySlider.value = Math.min(36, data.length);
     forecastSlider.min = 1; forecastSlider.max = forecast.length; forecastSlider.step = 1;
     forecastSlider.value = forecast.length;
 
@@ -733,16 +740,34 @@
       const rows = forecast.slice(0, forecastMonths);
       el.innerHTML = `
         <h3 class="section-title">Forecast Detail</h3>
-        <div class="subcaption">mean = model forecast, ci_lower / ci_upper = confidence interval bounds.</div>
+        <div class="subcaption">Last 24 months of actual YoY inflation, followed by the model's forecast with a 95% confidence interval.</div>
+        <div class="chart-box" id="forecastTabChart" style="margin-bottom:1.4rem;"></div>
+        <div class="subcaption">Point forecast with 95% confidence interval</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Forecast</th><th>CI Lower</th><th>CI Upper</th></tr></thead>
+            <thead><tr><th>Month</th><th>Forecast</th><th>Low (95%)</th><th>High (95%)</th></tr></thead>
             <tbody>
-              ${rows.map(r=>`<tr><td>${isoDate(r.date)}</td><td>${pctFmt(r.mean)}</td><td>${pctFmt(r.ci_lower)}</td><td>${pctFmt(r.ci_upper)}</td></tr>`).join('')}
+              ${rows.map(r=>`<tr><td>${fmtDate(r.date)}</td><td>${pctFmt(r.mean)}</td><td>${pctFmt(r.ci_lower)}</td><td>${pctFmt(r.ci_upper)}</td></tr>`).join('')}
             </tbody>
           </table>
         </div>
       `;
+
+      // Chart: last 24 months of actual YoY, then the forecast months
+      const hist = data.filter(d=>d.yoy!=null).slice(-24);
+      const blankHist = hist.map(()=>null);
+      const blankFc = rows.map(()=>null);
+      lineChart(document.getElementById('forecastTabChart'), {
+        height: 320, yTitle: "YoY Inflation (%)",
+        labels: [...hist.map(d=>fmtDate(d.date)), ...rows.map(r=>fmtDate(r.date))],
+        series: [
+          {key:'actual', label:'Actual', color:PRIMARY, values:[...hist.map(d=>d.yoy), ...blankFc]},
+          {key:'forecast', label:'Forecast', color:ACCENT, dashed:true, values:[...blankHist, ...rows.map(r=>r.mean)]},
+        ],
+        band: {upperValues:[...blankHist, ...rows.map(r=>r.ci_upper)], lowerValues:[...blankHist, ...rows.map(r=>r.ci_lower)], color:ACCENT, label:'95% confidence interval'},
+        hLines: [{value:FED_TARGET, color:MUTED_GRAY, label:'Fed Target (2%)'}],
+        yFormat: v=>v.toFixed(1)+'%'
+      });
     }
 
     // ---------------- Model Backtest tab ----------------
