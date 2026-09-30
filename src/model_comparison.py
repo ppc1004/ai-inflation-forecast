@@ -20,17 +20,21 @@ OUTPUT_PATH = (
 
 
 def compare_models():
-    data = pd.read_csv(DATA_PATH, parse_dates=["date"])
+    data = (
+        pd.read_csv(DATA_PATH, parse_dates=["date"])
+        .set_index("date")
+        .asfreq("MS")  # one row per calendar month; a missing month becomes NaN
+    )
+
+    # BLS did not publish October 2025 CPI (government shutdown).
+    # Fill missing months inside the series by linear interpolation so that
+    # pct_change(12) always compares a month with the same month one year earlier.
+    data["cpi"] = data["cpi"].interpolate(limit_area="inside")
 
     # Calculate year-over-year inflation
     data["yoy"] = data["cpi"].pct_change(12) * 100
 
-    yoy = (
-        data.dropna(subset=["yoy"])
-        .set_index("date")["yoy"]
-        .asfreq("MS")    
-        .dropna()
-    )
+    yoy = data["yoy"].dropna().asfreq("MS")
     # Keep the final 12 months for testing
     train = yoy.iloc[:-12]
     test = yoy.iloc[-12:]
