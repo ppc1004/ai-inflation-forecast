@@ -152,7 +152,7 @@
 
   /* ---------- horizontal bars (HTML) ---------- */
   .hbars{display:grid; gap:7px;}
-  .hb-row{display:grid; grid-template-columns:150px 1fr 70px; align-items:center; gap:12px; font-size:13px;}
+  .hb-row{display:grid; grid-template-columns:96px 1fr 64px; align-items:center; gap:12px; font-size:13px;}
   .hb-row.wide{grid-template-columns:190px 1fr 64px 64px;}
   .hb-head{font-size:12px; color:var(--muted);}
   .hb-name{white-space:nowrap; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;}
@@ -315,8 +315,9 @@
   const isoDate = d => d.toISOString().slice(0,10);
   const fix0 = (v, d) => { const s = v.toFixed(d); return /^-0\.?0*$/.test(s) ? s.slice(1) : s; };
   const pct = (v, d=1) => (v==null || !isFinite(v)) ? "—" : fix0(v, d) + "%";
-  const spct = (v, d=1) => (v==null || !isFinite(v)) ? "—" : (v>0?"+":v<0?"−":"") + Math.abs(v).toFixed(d) + "%";
-  const pp = (v, d=1) => (v==null || !isFinite(v)) ? "—" : (v>0?"+":v<0?"−":"") + Math.abs(v).toFixed(d) + " pp";
+  const sgn = (v, d) => +Math.abs(v).toFixed(d)===0 ? "" : v>0 ? "+" : "−";
+  const spct = (v, d=1) => (v==null || !isFinite(v)) ? "—" : sgn(v,d) + Math.abs(v).toFixed(d) + "%";
+  const pp = (v, d=1) => (v==null || !isFinite(v)) ? "—" : sgn(v,d) + Math.abs(v).toFixed(d) + " pp";
   const usd = (v, d=2) => (v==null || !isFinite(v)) ? "—" : "$" + v.toLocaleString("en-US",{minimumFractionDigits:d, maximumFractionDigits:d});
   const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const addMonths = (d, n) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+n, 1));
@@ -1111,7 +1112,7 @@
         <div class="grid-3">
           <div class="kpi"><div class="kpi-label"><span class="key-swatch" style="background:var(--c-3)"></span>Wages, past 12 months</div><div class="kpi-value num">${spct(lw.v)}</div><div class="kpi-sub">Average hourly earnings, ${fmtMonth(lw.date)}</div></div>
           <div class="kpi"><div class="kpi-label"><span class="key-swatch" style="background:var(--c-actual)"></span>Prices, past 12 months</div><div class="kpi-value num">${pAt?spct(pAt.yoy):'—'}</div><div class="kpi-sub">CPI, ${fmtMonth(lw.date)}</div></div>
-          <div class="kpi"><div class="kpi-label">Real wage growth</div><div class="kpi-value num ${real>=0?'down-good':'up-bad'}">${spct(real)}</div><div class="kpi-sub">${real>=0?'Paychecks are outpacing prices':'Prices are outpacing paychecks'}</div></div>
+          <div class="kpi"><div class="kpi-label">Real wage growth</div><div class="kpi-value num ${Math.abs(real)<0.05?'':real>0?'down-good':'up-bad'}">${spct(real)}</div><div class="kpi-sub">${Math.abs(real)<0.05?'Paychecks are roughly keeping pace':real>0?'Paychecks are outpacing prices':'Prices are outpacing paychecks'}</div></div>
         </div>
         <div class="card" style="margin-top:12px">
           <p class="card-title">Wage growth vs inflation, last 20 years</p>
@@ -1178,7 +1179,7 @@
         <div class="grid-3">
           <div class="kpi"><div class="kpi-label"><span class="key-swatch" style="background:var(--c-4)"></span>Federal funds rate</div><div class="kpi-value num">${pct(lf.v,2)}</div><div class="kpi-sub">Effective rate, ${fmtMonth(lf.date)}</div></div>
           <div class="kpi"><div class="kpi-label"><span class="key-swatch" style="background:var(--c-actual)"></span>CPI inflation</div><div class="kpi-value num">${cp?pct(cp.yoy):'—'}</div><div class="kpi-sub">Year over year, ${fmtMonth(lf.date)}</div></div>
-          <div class="kpi"><div class="kpi-label">Real policy rate</div><div class="kpi-value num">${realRate!=null?pp(realRate):'—'}</div><div class="kpi-sub">${realRate==null?'':realRate>0?'Positive: policy is restraining demand':'Negative: policy is still accommodative'}</div></div>
+          <div class="kpi"><div class="kpi-label">Real policy rate</div><div class="kpi-value num">${realRate!=null?pp(realRate):'—'}</div><div class="kpi-sub">${realRate==null?'':realRate>1?'Well above zero: policy is restraining demand':realRate>=-0.5?'Near zero: policy is close to neutral':'Below zero: policy is still accommodative'}</div></div>
         </div>
         <div class="card" style="margin-top:12px">
           <div class="card-head"><div><p class="card-title">Federal funds rate and inflation</p><p class="card-sub">The highest rate on record was ${pct(peak.v,1)} in ${fmtMonth(peak.date)}${peak.date.getUTCFullYear()>=1979 && peak.date.getUTCFullYear()<=1982 ? ', when the Fed under Paul Volcker broke the inflation of the 1970s' : ''}.</p></div>
